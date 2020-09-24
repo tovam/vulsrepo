@@ -591,8 +591,17 @@ const createPivotData = function(resultArray) {
                     }
                     result["CERT"] = cert;
 
-                    if (y_val.exploits !== undefined) {
-                        result["PoC"] = "PoC(" + y_val.exploits.length + ")";
+                    if (y_val.exploits !== undefined || y_val.metasploits !== undefined) {
+                        let count = 0;
+                        if (y_val.exploits !== undefined) {
+                            count = y_val.exploits.length;
+                        }
+                        if (y_val.metasploits !== undefined) {
+                            $.each(y_val.metasploits, function(x, m_val) {
+                                count = count + m_val.URLs.length;
+                            });
+                        }
+                        result["PoC"] = "PoC(" + count + ")";
                     } else {
                         result["PoC"] = "";
                     }
@@ -1076,6 +1085,7 @@ const createDetailData = function(cveID) {
             targetObj["cveID"] = cveID;
             targetObj["DistroAdvisories"] = tmpCve.distroAdvisories;
             targetObj["exploits"] = tmpCve.exploits;
+            targetObj["metasploits"] = tmpCve.metasploits;
             $.each(vulsrepo.detailTaget, function(i, i_val) {
                 if (tmpCve.cveContents !== undefined && tmpCve.cveContents[i_val] !== undefined) {
                     targetObj.cveContents[i_val] = tmpCve.cveContents[i_val];
@@ -1436,14 +1446,37 @@ const displayDetail = function(cveID) {
 
     var addExploit = function() {
         if (data.exploits !== undefined) {
-            $("#References").append("<div>===Exploits===</div>");
+            $("#References").append("<div>===Exploit Codes===</div>");
            $.each(data.exploits, function(x, x_val) {
                $("#References").append("<div>[" + x_val.exploitType + "]<a href=\"" + x_val.url + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.url + ")</a> " + x_val.description + "</div>");
                countRef++;
            });
         }
+
+        if (data.metasploits !== undefined) {
+            $("#References").append("<div>===Metasploit Modules===</div>");
+            $.each(data.metasploits, function(x, x_val) {
+                // name, title
+                $("#References").append("<div>[" + x_val.name + "] " + x_val.title);
+                // description
+                $("#References").append("<span class='metasploits-description'>" + x_val.description + "</span>");
+                // URLs
+                $("#References").append("<ul>");
+                $.each(x_val.URLs, function(u, u_val) {
+                    $("#References").append("<li><a href=\"" + u_val + "\" rel='noopener noreferrer' target='_blank'>" + u_val + "</a></li>");
+                    countRef++;
+                });
+                $("#References").append("</ul>");
+                $("#References").append("</div>");
+            });
+        }
     }
     addExploit();
+    $('span.metasploits-description').collapser({
+        mode: 'words',
+        truncate: 50
+    });
+
     $("#count-References").text(countRef);
 
     // ---Tab Package
