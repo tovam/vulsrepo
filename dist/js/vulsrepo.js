@@ -439,6 +439,8 @@ const createPivotData = function(resultArray) {
                 "Release": x_val.data.release,
                 "CveID": "healthy",
                 "Packages": "healthy",
+                "FixedIn": "healthy",
+                "FixState": "healthy",
                 "NotFixedYet": "healthy",
                 "PackageVer": "healthy",
                 "NewPackageVer": "healthy",
@@ -500,9 +502,13 @@ const createPivotData = function(resultArray) {
                     if (p_val.name === undefined) {
                         pkgName = p_val;
                         NotFixedYet = "Unknown";
+                        fixedIn = "";
+                        fixState = "";
                     } else {
                         pkgName = p_val.name;
-                        NotFixedYet = isNotFixedYet(p_val, x_val.data.packages[pkgName]);
+                        NotFixedYet = isNotFixedYet(p_val);
+                        fixedIn = getFixedIn(p_val);
+                        fixState = getFixState(p_val);
                     }
 
                     let pkgInfo = x_val.data.packages[pkgName];
@@ -514,6 +520,8 @@ const createPivotData = function(resultArray) {
                         "CveID": "CHK-cveid-" + y_val.cveID,
                         "Packages": pkgName,
                         "NotFixedYet": NotFixedYet,
+                        "FixedIn": fixedIn,
+                        "FixState": fixState
                     };
 
                     result["ServerName"] = getServerName(x_val.data);
@@ -786,10 +794,26 @@ const createPivotData = function(resultArray) {
     return array;
 };
 
-const isNotFixedYet = function(val, pkg) {
+const isNotFixedYet = function(val) {
     var result = "Fixed";
     if (val.notFixedYet !== undefined) {
         result = val.notFixedYet === true ? "Unfixed" : "Fixed";
+    }
+    return result;
+};
+
+const getFixedIn = function(val) {
+    var result = "";
+    if (val.fixedIn !== undefined) {
+        result = val.fixedIn;
+    }
+    return result;
+};
+
+const getFixState = function(val) {
+    var result = "";
+    if (val.fixState !== undefined) {
+        result = val.fixState;
     }
     return result;
 };
@@ -1452,6 +1476,10 @@ const displayDetail = function(cveID) {
             }, {
                 data: "Repository"
             }, {
+                data: "FixedIn"
+            }, {
+                data: "FixState"
+            }, {
                 data: "NotFixedYet"
             }]
         });
@@ -1544,7 +1572,9 @@ const createDetailPackageData = function(cveID) {
                         NotFixedYet = "None";
                     } else {
                         pkgName = z_val.name;
-                        NotFixedYet = isNotFixedYet(z_val, x_val.data.packages[pkgName]);
+                        NotFixedYet = isNotFixedYet(z_val);
+                        fixedIn = getFixedIn(z_val);
+                        fixState = getFixState(z_val);
                     }
 
                     let tmp_Map = {
@@ -1561,6 +1591,8 @@ const createDetailPackageData = function(cveID) {
                         tmp_Map["PackageNewRelease"] = "";
                         tmp_Map["Repository"] = "";
                         tmp_Map["NotFixedYet"] = "";
+                        tmp_Map["FixedIn"] = "";
+                        tmp_Map["FixState"] = "";
                     } else if (x_val.data.packages[pkgName] !== undefined) {
                         tmp_Map["PackageName"] = '<a href="#contents" class="lightbox" data-cveid="' + cveID + '" data-scantime="' + x_val.scanTime + '" data-server="' + x_val.data.serverName + '" data-container="' + x_val.data.container.name + '" data-package="' + pkgName + '">' + pkgName + '</a>';
                         tmp_Map["PackageVersion"] = x_val.data.packages[pkgName].version;
@@ -1569,6 +1601,8 @@ const createDetailPackageData = function(cveID) {
                         tmp_Map["PackageNewRelease"] = x_val.data.packages[pkgName].newRelease;
                         tmp_Map["Repository"] = x_val.data.packages[pkgName].repository;
                         tmp_Map["NotFixedYet"] = NotFixedYet;
+                        tmp_Map["FixedIn"] = fixedIn;
+                        tmp_Map["FixState"] = fixState;
                     } else {
                         return;
                     }
@@ -1600,28 +1634,45 @@ const displayChangelogDetail = function(ankerData) {
         let result;
         $.each(changelogInfo.cveidInfo.affectedPackages, function (i, i_val) {
             if (i_val.Name = package) {
-                result = isNotFixedYet(i_val, changelogInfo.pkgContents);
+                result = i_val;
             };
         });
         return result;
     };
 
-    let notFixedYet = getPkg();
+    let pkg = getPkg();
+    let notFixedYet = isNotFixedYet(pkg);
     if (notFixedYet === "Unfixed") {
         $("#changelog-notfixedyet").append("Unfixed").removeClass("notfixyet-false").addClass("notfixyet-true");
     } else if (notFixedYet === "Fixed") {
         $("#changelog-notfixedyet").append("Fixed").removeClass("notfixyet-true").addClass("notfixyet-false");
     }
+    let fixedIn = getFixedIn(pkg);
+    let fixState = getFixState(pkg);
 
     if (isCheckNull(changelogInfo.pkgContents) !== true) {
         var packageInfo = pkgContents.name + "-" + pkgContents.version;
         if (pkgContents.release !== "") {
             packageInfo = packageInfo + "." + pkgContents.release;
         }
-        packageInfo = packageInfo + " => " + pkgContents.newVersion;
+        let to = pkgContents.newVersion;
         if (pkgContents.newRelease !== "") {
-            packageInfo = packageInfo + "." + pkgContents.newRelease
+            to = to + "." + pkgContents.newRelease;
         }
+        if (notFixedYet === "Unfixed") {
+            if (fixState !== "") {
+                to = fixState;
+            } else {
+                to = "Not Fixed Yet";
+            }
+        } else if (to === "") {
+            to = "Unknown";
+        }
+        if (fixedIn !== "") {
+            to = to + "<br> (FixedIn: " + fixedIn + ")";
+        }
+
+        packageInfo = packageInfo + " => " + to;
         if (pkgContents.repository !== "") {
             packageInfo = packageInfo + " (" + pkgContents.repository + ")";
         }
