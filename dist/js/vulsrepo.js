@@ -1390,8 +1390,8 @@ const displayDetail = function(cveID) {
         $("#Link").append("<span> / </span>");
         addLink("#Link", detailLink.cvssV3CalculatorJvn.url + "#" + data.cveContents.jvn.cvss3Vector, detailLink.cvssV3CalculatorJvn.disp);
     }
-    $("#Link").append("<span> / </span>");
     $.each(getDistroAdvisoriesArray(data.DistroAdvisories), function(i, i_val) {
+        $("#Link").append("<span> / </span>");
         addLink("#Link", i_val.url, i_val.disp);
     });
 
