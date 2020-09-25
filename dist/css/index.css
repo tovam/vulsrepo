@@ -299,12 +299,18 @@ section {
     margin-top: 10px;
 }
 
-#title-References {
+.title {
     font-size: 14px;
 }
 
-#count-References {
+.count {
     margin-left: 10px;
+}
+
+a.collapse {
+  height: 100%;
+  width: 100%;
+  display: inline-block;
 }
 
 .modal .large {
