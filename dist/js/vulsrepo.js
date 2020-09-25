@@ -1086,6 +1086,7 @@ const createDetailData = function(cveID) {
             targetObj["DistroAdvisories"] = tmpCve.distroAdvisories;
             targetObj["exploits"] = tmpCve.exploits;
             targetObj["metasploits"] = tmpCve.metasploits;
+            targetObj["alertDict"] = tmpCve.alertDict;
             $.each(vulsrepo.detailTaget, function(i, i_val) {
                 if (tmpCve.cveContents !== undefined && tmpCve.cveContents[i_val] !== undefined) {
                     targetObj.cveContents[i_val] = tmpCve.cveContents[i_val];
@@ -1099,8 +1100,9 @@ const createDetailData = function(cveID) {
 
 const initDetail = function() {
     $("#modal-label").text("");
+    $("#count-cert").text("0");
     $("#count-References").text("0");
-    $("#CweID,#Link,#References").empty();
+    $("#CweID,#Link,#cert,#References").empty();
 
     $.each(vulsrepo.detailTaget, function(i, i_val) {
         $("#typeName_" + i_val).empty();
@@ -1390,8 +1392,8 @@ const displayDetail = function(cveID) {
         $("#Link").append("<span> / </span>");
         addLink("#Link", detailLink.cvssV3CalculatorJvn.url + "#" + data.cveContents.jvn.cvss3Vector, detailLink.cvssV3CalculatorJvn.disp);
     }
-    $("#Link").append("<span> / </span>");
     $.each(getDistroAdvisoriesArray(data.DistroAdvisories), function(i, i_val) {
+        $("#Link").append("<span> / </span>");
         addLink("#Link", i_val.url, i_val.disp);
     });
 
@@ -1424,6 +1426,37 @@ const displayDetail = function(cveID) {
         $("#typeName_amazon").append("Amazon");
     }
 
+    const prioltyFlag = db.get("vulsrepo_pivotPriority");
+
+    // ---USCERT/JPCERT---
+    let countCert = 0;
+
+    let nvd = prioltyFlag.indexOf("nvd");
+    let jvn = prioltyFlag.indexOf("jvn");
+    var addCert = function(target, cert) {
+        if (data.alertDict[target] !== undefined) {
+            if (isCheckNull(data.alertDict[target]) === false) {
+                $("#cert").append("<div>===" + cert + " Alert===</div>");
+                $.each(data.alertDict[target], function(x, x_val) {
+                    let title = cert;
+                    if (x_val.title !== undefined) {
+                        title = x_val.title;
+                    }
+                    $("#cert").append("<div>[" + title + "]<a href=\"" + x_val.url + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.url + ")</a></div>");
+                    countCert++;
+                });
+            }
+        }
+    }
+    if (nvd < jvn) {
+        addCert("en", "USCERT");
+        addCert("ja", "JPCERT");
+    } else {
+        addCert("ja", "JPCERT");
+        addCert("en", "USCERT");
+    }
+    $("#count-cert").text(countCert);
+
     // ---References---
     let countRef = 0;
 
@@ -1439,7 +1472,6 @@ const displayDetail = function(cveID) {
         }
     }
 
-    const prioltyFlag = db.get("vulsrepo_pivotPriority");
     $.each(prioltyFlag, function(i, i_val) {
         addRef(i_val);
     });
