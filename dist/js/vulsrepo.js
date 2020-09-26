@@ -1102,7 +1102,7 @@ const initDetail = function() {
     $("#modal-label").text("");
     $("#count-cert").text("0");
     $("#count-References").text("0");
-    $("#CweID,#Link,#cert,#References").empty();
+    $("#CweID,#Link,#cert,#exploit,#References").empty();
 
     $.each(vulsrepo.detailTaget, function(i, i_val) {
         $("#typeName_" + i_val).empty();
@@ -1436,15 +1436,18 @@ const displayDetail = function(cveID) {
     var addCert = function(target, cert) {
         if (data.alertDict[target] !== undefined) {
             if (isCheckNull(data.alertDict[target]) === false) {
-                $("#cert").append("<div>===" + cert + " Alert===</div>");
+                $("#cert").append("<div><strong>=== " + cert + " Alert ===</strong></div>");
+                let certId = cert + "-cert-list";
+                $("#cert").append("<ul id='" + certId + "'>");
                 $.each(data.alertDict[target], function(x, x_val) {
                     let title = cert;
                     if (x_val.title !== undefined) {
                         title = x_val.title;
                     }
-                    $("#cert").append("<div>[" + title + "]<a href=\"" + x_val.url + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.url + ")</a></div>");
+                    $("#" + certId).append("<li>[" + title + "]<a href=\"" + x_val.url + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.url + ")</a></li>");
                     countCert++;
                 });
+                $("#cert").append("</ul>");
             }
         }
     }
@@ -1457,56 +1460,71 @@ const displayDetail = function(cveID) {
     }
     $("#count-cert").text(countCert);
 
-    // ---References---
-    let countRef = 0;
-
-    var addRef = function(target) {
-        if (data.cveContents[target] !== undefined) {
-            if (isCheckNull(data.cveContents[target].references) === false) {
-                $("#References").append("<div>===" + target + "===</div>");
-                $.each(data.cveContents[target].references, function(x, x_val) {
-                    $("#References").append("<div>[" + x_val.source + "]<a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.link + ")</a></div>");
-                    countRef++;
-                });
-            }
-        }
-    }
-
-    $.each(prioltyFlag, function(i, i_val) {
-        addRef(i_val);
-    });
+    // ---Exploits---
+    let countExploit = 0;
 
     var addExploit = function() {
         if (data.exploits !== undefined) {
-            $("#References").append("<div>===Exploit Codes===</div>");
-           $.each(data.exploits, function(x, x_val) {
-               $("#References").append("<div>[" + x_val.exploitType + "]<a href=\"" + x_val.url + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.url + ")</a> " + x_val.description + "</div>");
-               countRef++;
-           });
+            $("#exploit").append("<div><strong>=== Exploit Codes ===</strong></div>");
+            $("#exploit").append("<ul id='exploit-list'>");
+            $.each(data.exploits, function(x, x_val) {
+                $("#exploit-list").append("<li>[" + x_val.exploitType + "]<a href=\"" + x_val.url + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.url + ")</a> " + x_val.description + "</li>");
+                countExploit++;
+            });
+            $("#exploit").append("</ul>");
         }
 
         if (data.metasploits !== undefined) {
-            $("#References").append("<div>===Metasploit Modules===</div>");
+            $("#exploit").append("<div><strong>=== Metasploit Modules ===</strong></div>");
+            $("#exploit").append("<ul id='metasploit-list'>");
             $.each(data.metasploits, function(x, x_val) {
+                let exploitId = "exploit-" + countExploit;
+                $("#metasploit-list").append("<li id='" + exploitId + "'>");
+
                 // name, title
-                $("#References").append("<div>[" + x_val.name + "] " + x_val.title);
+                $("#" + exploitId).append("<div>[" + x_val.name + "] " + x_val.title);
                 // description
-                $("#References").append("<span class='metasploits-description'>" + x_val.description + "</span>");
+                $("#" + exploitId).append("<span class='metasploits-description'>" + x_val.description + "</span>");
                 // URLs
-                $("#References").append("<ul>");
+                $("#" + exploitId).append("<ul id='"+ exploitId + "-inner-list'>");
                 $.each(x_val.URLs, function(u, u_val) {
-                    $("#References").append("<li><a href=\"" + u_val + "\" rel='noopener noreferrer' target='_blank'>" + u_val + "</a></li>");
-                    countRef++;
+                    $("#" + exploitId +"-inner-list").append("<li><a href=\"" + u_val + "\" rel='noopener noreferrer' target='_blank'>" + u_val + "</a></li>");
+                    countExploit++;
                 });
-                $("#References").append("</ul>");
-                $("#References").append("</div>");
+                $("#" + exploitId).append("</ul>");
+                $("#" + exploitId).append("</div>");
+                $("#metasploit-list").append("</li>");
             });
+            $("#exploit").append("</ul>");
         }
     }
     addExploit();
     $('span.metasploits-description').collapser({
         mode: 'words',
         truncate: 50
+    });
+    $("#count-exploit").text(countExploit);
+
+    // ---References---
+    let countRef = 0;
+
+    var addRef = function(target) {
+        if (data.cveContents[target] !== undefined) {
+            if (isCheckNull(data.cveContents[target].references) === false) {
+                $("#References").append("<div><strong>=== " + target + " ===</strong></div>");
+                let referencesId = target + "-references-list";
+                $("#References").append("<ul id='"+ referencesId + "'>");
+                $.each(data.cveContents[target].references, function(x, x_val) {
+                    $("#" + referencesId).append("<li>[" + x_val.source + "]<a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.link + ")</a></li>");
+                    countRef++;
+                });
+                $("#References").append("</ul>");
+            }
+        }
+    }
+
+    $.each(prioltyFlag, function(i, i_val) {
+        addRef(i_val);
     });
 
     $("#count-References").text(countRef);
