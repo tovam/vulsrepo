@@ -1079,6 +1079,7 @@ const addChangelogLink = function() {
 
 const createDetailData = function(cveID) {
     var targetObj = { cveContents: {} };
+    targetObj["cweDict"] = {};
     $.each(vulsrepo.detailRawData, function(x, x_val) {
         tmpCve = x_val.data.scannedCves[cveID];
         if (tmpCve !== undefined) {
@@ -1090,6 +1091,27 @@ const createDetailData = function(cveID) {
             $.each(vulsrepo.detailTaget, function(i, i_val) {
                 if (tmpCve.cveContents !== undefined && tmpCve.cveContents[i_val] !== undefined) {
                     targetObj.cveContents[i_val] = tmpCve.cveContents[i_val];
+                    // Make CWE information
+                    if (targetObj.cveContents[i_val].cweIDs !== undefined) {
+                        $.each(targetObj.cveContents[i_val].cweIDs, function(c, c_val) {
+                            if (c_val.indexOf("NVD-CWE-") === -1) {
+                                let cweid = c_val.split("-")[1];
+                                let cweDict = x_val.data.cweDict[cweid];
+                                if (targetObj.cweDict[cweid] === undefined) {
+                                    targetObj.cweDict[cweid] = {};
+                                }
+                                if (targetObj.cweDict[cweid].en === undefined && cweDict.en !== undefined) {
+                                    targetObj.cweDict[cweid].en = cweDict.en;
+                                }
+                                if (targetObj.cweDict[cweid].ja === undefined && cweDict.ja !== undefined) {
+                                    targetObj.cweDict[cweid].ja = cweDict.ja;
+                                }
+                                targetObj.cweDict[cweid].owaspTopTen2017 = cweDict.owaspTopTen2017;
+                                targetObj.cweDict[cweid].cweTopTwentyfive2019 = cweDict.cweTopTwentyfive2019;
+                                targetObj.cweDict[cweid].sansTopTwentyfive = cweDict.sansTopTwentyfive;
+                            }
+                        });
+                    }
                 }
             });
         }
@@ -1356,14 +1378,58 @@ const displayDetail = function(cveID) {
         truncate: 50
     });
 
+    const prioltyFlag = db.get("vulsrepo_pivotPriority");
+    let nvd = prioltyFlag.indexOf("nvd");
+    let jvn = prioltyFlag.indexOf("jvn");
+
     // ---CweID---
     if (data.cveContents.nvd !== undefined) {
         if (data.cveContents.nvd.cweIDs) {
-            $("#CweID").append("<span>NVD:[" + data.cveContents.nvd.cweIDs + "] (</span>");
-            $("#CweID").append("<a href=\"" + detailLink.cwe_nvd.url + data.cveContents.nvd.cweIDs[0].split("-")[1] + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
-            $("#CweID").append("<span>&nbsp;/&nbsp;</span>");
-            $("#CweID").append("<a href=\"" + detailLink.cwe_jvn.url + data.cveContents.nvd.cweIDs[0] + ".html\" rel='noopener noreferrer' target='_blank'>JVN)</a>");
-            $("#CweID").append("<span>&emsp;</span>");
+            $("#CweID").append("<ul id='cwe-nvd'>");
+            $.each(data.cveContents.nvd.cweIDs, function(x, x_val) {
+                let cweid = x_val.split("-")[1];
+                if (data.cweDict[cweid] !== undefined) {
+                    $("#cwe-nvd").append("<li id='cweid-" + cweid + "'>");
+                    let name = "";
+                    if (nvd < jvn) {
+                        if (data.cweDict[cweid].en !== undefined) {
+                            name = data.cweDict[cweid].en.name;
+                        } else if (name === "" && data.cweDict[cweid].ja !== undefined) {
+                            name = data.cweDict[cweid].ja.name;
+                        }
+                    } else {
+                        if (data.cweDict[cweid].ja !== undefined) {
+                            name = data.cweDict[cweid].ja.name;
+                        } else  if (name === "" && data.cweDict[cweid].en !== undefined) {
+                            name = data.cweDict[cweid].en.name;
+                        }
+                    }
+                    $("#cweid-" + cweid).append("CWE-" + cweid + " [" + name + "]");
+                    $("#cweid-" + cweid).append(" (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
+                    $("#cweid-" + cweid).append("<span>&nbsp;/&nbsp;</span>");
+                    $("#cweid-" + cweid).append("<a href=\"" + detailLink.cwe_jvn.url + x_val + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)");
+                    if (data.cweDict[cweid].owaspTopTen2017 !== "") {
+                        // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
+                        let owaspLink = "";
+                        if (nvd < jvn) {
+                            owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].en;
+                        } else {
+                            owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].ja;
+                        }
+                        $("#cweid-" + cweid).append(" <a href=\"" + owaspLink + "\" rel='noopener noreferrer' target='_blank' class='badge count'>OWASP Rank: " + data.cweDict[cweid].owaspTopTen2017 +"</a>");
+                    }
+                    if (data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
+                        // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
+                        $("#cweid-" + cweid).append(" <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>");
+                    }
+                    if (data.cweDict[cweid].sansTopTwentyfive !== "") {
+                        // SANS Top25 https://www.sans.org/top25-software-errors/
+                        $("#cweid-" + cweid).append(" <a href=\"" + detailLink.sansTopTwentyfive.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>SANS Rank: " + data.cweDict[cweid].sansTopTwentyfive + "</a>");
+                    }
+                    $("#cwe-nvd").append("</li>");
+                }
+            });
+            $("#CweID").append("</ul>");
         }
     }
 
@@ -1426,13 +1492,9 @@ const displayDetail = function(cveID) {
         $("#typeName_amazon").append("Amazon");
     }
 
-    const prioltyFlag = db.get("vulsrepo_pivotPriority");
-
     // ---USCERT/JPCERT---
     let countCert = 0;
 
-    let nvd = prioltyFlag.indexOf("nvd");
-    let jvn = prioltyFlag.indexOf("jvn");
     var addCert = function(target, cert) {
         if (data.alertDict[target] !== undefined) {
             if (isCheckNull(data.alertDict[target]) === false) {
@@ -1480,7 +1542,6 @@ const displayDetail = function(cveID) {
             $.each(data.metasploits, function(x, x_val) {
                 let exploitId = "exploit-" + countExploit;
                 $("#metasploit-list").append("<li id='" + exploitId + "'>");
-
                 // name, title
                 $("#" + exploitId).append("<div>[" + x_val.name + "] " + x_val.title);
                 // description
