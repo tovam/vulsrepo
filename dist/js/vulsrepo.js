@@ -561,7 +561,7 @@ const createPivotData = function(resultArray) {
                                     if (j < cweIds.length - 1) {
                                         cweIdStr = cweIdStr + ", ";
                                     }
-                            }
+                                }
                                 result["CweID"] = "CHK-cweid-" + cweIdStr;
                             }
                         } else {
