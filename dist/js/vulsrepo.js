@@ -312,30 +312,25 @@ const setEvents = function() {
     });
 
     // ---switch
-    $("[name='chkPivotSummary']").bootstrapSwitch();
-    $("[name='chkPivotCvss']").bootstrapSwitch();
-
-    if (db.get("vulsrepo_chkPivotSummary") === "false") {
-        $('input[name="chkPivotSummary"]').bootstrapSwitch('state', false, false);
-    }
-    if (db.get("vulsrepo_chkPivotCvss") === "false") {
-        $('input[name="chkPivotCvss"]').bootstrapSwitch('state', false, false);
-    }
-
-    $('input[name="chkPivotSummary"]').on('switchChange.bootstrapSwitch', function(event, state) {
-        if (state === false) {
-            db.set("vulsrepo_chkPivotSummary", "false");
-        } else {
-            db.remove("vulsrepo_chkPivotSummary");
+    let initSwitch = function(name) {
+        $("[name='" + name + "']").bootstrapSwitch();
+        if (db.get("vulsrepo_" + name) === "false") {
+            $('input[name="' + name + '"]').bootstrapSwitch('state', false, false);
         }
-    });
-    $('input[name="chkPivotCvss"]').on('switchChange.bootstrapSwitch', function(event, state) {
-        if (state === false) {
-            db.set("vulsrepo_chkPivotCvss", "false");
-        } else {
-            db.remove("vulsrepo_chkPivotCvss");
-        }
-    });
+
+        $('input[name="' + name + '"]').on('switchChange.bootstrapSwitch', function(event, state) {
+            if (state === false) {
+                db.set("vulsrepo_" + name, "false");
+            } else {
+                db.remove("vulsrepo_" + name);
+            }
+        });
+    };
+    initSwitch("chkPivotSummary");
+    initSwitch("chkPivotCvss");
+    initSwitch("chkCweTop25");
+    initSwitch("chkOwaspTopTen2017");
+    initSwitch("chkSansTop25");
 
     // ---priority
 
@@ -429,6 +424,9 @@ const createPivotData = function(resultArray) {
     const prioltyFlag = db.get("vulsrepo_pivotPriority");
     const summaryFlag = db.get("vulsrepo_chkPivotSummary");
     const cvssFlag = db.get("vulsrepo_chkPivotCvss");
+    const cweTop25Flag = db.get("vulsrepo_chkCweTop25");
+    const owaspTopTen2017Flag = db.get("vulsrepo_chkOwaspTopTen2017");
+    const sansTop25Flag = db.get("vulsrepo_chkSansTop25");
 
     $.each(resultArray, function(x, x_val) {
         if (Object.keys(x_val.data.scannedCves).length === 0) {
@@ -534,25 +532,34 @@ const createPivotData = function(resultArray) {
                             if(cweIds[0].indexOf("NVD-CWE-") !== -1) {
                                 result["CweID"] = cweIds[0];
                             } else {
-                                // TODO OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
-                                // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
-                                let cweTop25 = ["119", "79", "20", "200", "125", "89", "416", "190", "352", "22", "78", "787", "287", "476", "732", "434", "611", "94", "798", "400", "772", "426", "502", "269", "295"]
-                                // TODO SANS Top25 https://www.sans.org/top25-software-errors/
                                 for(var j = 0; j < cweIds.length; j++) {
+                                    cweIdStr = cweIdStr + cweIds[j];
                                     let match = false;
-                                    for(var i = 0; i < cweTop25.length; i++) {
-                                        if(cweIds[j].indexOf(cweTop25[i]) !== -1) {
-                                            match = true;
-                                            break;
+                                    let makeCweStr = function(source) {
+                                        if (match === true) {
+                                            return;
                                         }
+                                        for(var i = 0; i < cweTop[source].length; i++) {
+                                            if(cweIds[j] === "CWE-" + cweTop[source][i]) {
+                                                match = true;
+                                                break;
+                                            }
+                                        }
+                                        if (match === true) {
+                                            cweIdStr = cweIdStr + "[!!]";
+                                        }
+                                    };
+                                    if (cweTop25Flag !== "false") {
+                                        makeCweStr("cweTop25");
                                     }
-                                    if (match === true) {
-                                        cweIdStr = cweIdStr + cweIds[j] + "[!!]";
-                                    } else {
-                                        cweIdStr = cweIdStr + cweIds[j];
+                                    if (owaspTopTen2017Flag !== "false") {
+                                        makeCweStr("owaspTopTen2017");
+                                    }
+                                    if (sansTop25Flag !== "false") {
+                                        makeCweStr("sansTop25");
                                     }
                                     if (j < cweIds.length - 1) {
-                                        cweIdStr = cweIdStr + ",";
+                                        cweIdStr = cweIdStr + ", ";
                                     }
                                 }
                                 result["CweID"] = "CHK-cweid-" + cweIdStr;
@@ -1008,7 +1015,7 @@ const addCweIDLink = function() {
     doms.each(function() {
         let cveid = $(this).text();
         cveid = cveid.replace("CHK-cweid-", "");
-        let cveids = cveid.split(',');
+        let cveids = cveid.split(', ');
         let generated = "";
         for (var i = 0; i < cveids.length; i++) {
             if (cveids[i].indexOf("NVD-CWE-") !== -1) {
@@ -1024,7 +1031,7 @@ const addCweIDLink = function() {
                 }
             }
             if (i < cveids.length - 1) {
-                generated = generated + ",";
+                generated = generated + ", ";
             }
         }
         $(this).text("").append(generated);
@@ -1079,6 +1086,7 @@ const addChangelogLink = function() {
 
 const createDetailData = function(cveID) {
     var targetObj = { cveContents: {} };
+    targetObj["cweDict"] = {};
     $.each(vulsrepo.detailRawData, function(x, x_val) {
         tmpCve = x_val.data.scannedCves[cveID];
         if (tmpCve !== undefined) {
@@ -1090,6 +1098,27 @@ const createDetailData = function(cveID) {
             $.each(vulsrepo.detailTaget, function(i, i_val) {
                 if (tmpCve.cveContents !== undefined && tmpCve.cveContents[i_val] !== undefined) {
                     targetObj.cveContents[i_val] = tmpCve.cveContents[i_val];
+                    // Make CWE information
+                    if (targetObj.cveContents[i_val].cweIDs !== undefined) {
+                        $.each(targetObj.cveContents[i_val].cweIDs, function(c, c_val) {
+                            if (c_val.indexOf("NVD-CWE-") === -1) {
+                                let cweid = c_val.split("-")[1];
+                                let cweDict = x_val.data.cweDict[cweid];
+                                if (targetObj.cweDict[cweid] === undefined) {
+                                    targetObj.cweDict[cweid] = {};
+                                }
+                                if (targetObj.cweDict[cweid].en === undefined && cweDict.en !== undefined) {
+                                    targetObj.cweDict[cweid].en = cweDict.en;
+                                }
+                                if (targetObj.cweDict[cweid].ja === undefined && cweDict.ja !== undefined) {
+                                    targetObj.cweDict[cweid].ja = cweDict.ja;
+                                }
+                                targetObj.cweDict[cweid].owaspTopTen2017 = cweDict.owaspTopTen2017;
+                                targetObj.cweDict[cweid].cweTopTwentyfive2019 = cweDict.cweTopTwentyfive2019;
+                                targetObj.cweDict[cweid].sansTopTwentyfive = cweDict.sansTopTwentyfive;
+                            }
+                        });
+                    }
                 }
             });
         }
@@ -1356,14 +1385,58 @@ const displayDetail = function(cveID) {
         truncate: 50
     });
 
+    const prioltyFlag = db.get("vulsrepo_pivotPriority");
+    let nvd = prioltyFlag.indexOf("nvd");
+    let jvn = prioltyFlag.indexOf("jvn");
+
     // ---CweID---
     if (data.cveContents.nvd !== undefined) {
         if (data.cveContents.nvd.cweIDs) {
-            $("#CweID").append("<span>NVD:[" + data.cveContents.nvd.cweIDs + "] (</span>");
-            $("#CweID").append("<a href=\"" + detailLink.cwe_nvd.url + data.cveContents.nvd.cweIDs[0].split("-")[1] + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
-            $("#CweID").append("<span>&nbsp;/&nbsp;</span>");
-            $("#CweID").append("<a href=\"" + detailLink.cwe_jvn.url + data.cveContents.nvd.cweIDs[0] + ".html\" rel='noopener noreferrer' target='_blank'>JVN)</a>");
-            $("#CweID").append("<span>&emsp;</span>");
+            $("#CweID").append("<ul id='cwe-nvd'>");
+            $.each(data.cveContents.nvd.cweIDs, function(x, x_val) {
+                let cweid = x_val.split("-")[1];
+                if (data.cweDict[cweid] !== undefined) {
+                    $("#cwe-nvd").append("<li id='cweid-" + cweid + "'>");
+                    let name = "";
+                    if (nvd < jvn) {
+                        if (data.cweDict[cweid].en !== undefined) {
+                            name = data.cweDict[cweid].en.name;
+                        } else if (name === "" && data.cweDict[cweid].ja !== undefined) {
+                            name = data.cweDict[cweid].ja.name;
+                        }
+                    } else {
+                        if (data.cweDict[cweid].ja !== undefined) {
+                            name = data.cweDict[cweid].ja.name;
+                        } else  if (name === "" && data.cweDict[cweid].en !== undefined) {
+                            name = data.cweDict[cweid].en.name;
+                        }
+                    }
+                    $("#cweid-" + cweid).append(cweid + " [" + name + "]");
+                    $("#cweid-" + cweid).append(" (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
+                    $("#cweid-" + cweid).append("<span>&nbsp;/&nbsp;</span>");
+                    $("#cweid-" + cweid).append("<a href=\"" + detailLink.cwe_jvn.url + x_val + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)");
+                    if (data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
+                        // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
+                        $("#cweid-" + cweid).append(" <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>");
+                    }
+                    if (data.cweDict[cweid].owaspTopTen2017 !== "") {
+                        // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
+                        let owaspLink = "";
+                        if (nvd < jvn) {
+                            owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].en;
+                        } else {
+                            owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].ja;
+                        }
+                        $("#cweid-" + cweid).append(" <a href=\"" + owaspLink + "\" rel='noopener noreferrer' target='_blank' class='badge count'>OWASP Rank: " + data.cweDict[cweid].owaspTopTen2017 +"</a>");
+                    }
+                    if (data.cweDict[cweid].sansTopTwentyfive !== "") {
+                        // SANS Top25 https://www.sans.org/top25-software-errors/
+                        $("#cweid-" + cweid).append(" <a href=\"" + detailLink.sansTopTwentyfive.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>SANS Rank: " + data.cweDict[cweid].sansTopTwentyfive + "</a>");
+                    }
+                    $("#cwe-nvd").append("</li>");
+                }
+            });
+            $("#CweID").append("</ul>");
         }
     }
 
@@ -1426,13 +1499,9 @@ const displayDetail = function(cveID) {
         $("#typeName_amazon").append("Amazon");
     }
 
-    const prioltyFlag = db.get("vulsrepo_pivotPriority");
-
     // ---USCERT/JPCERT---
     let countCert = 0;
 
-    let nvd = prioltyFlag.indexOf("nvd");
-    let jvn = prioltyFlag.indexOf("jvn");
     var addCert = function(target, cert) {
         if (data.alertDict[target] !== undefined) {
             if (isCheckNull(data.alertDict[target]) === false) {
@@ -1480,7 +1549,6 @@ const displayDetail = function(cveID) {
             $.each(data.metasploits, function(x, x_val) {
                 let exploitId = "exploit-" + countExploit;
                 $("#metasploit-list").append("<li id='" + exploitId + "'>");
-
                 // name, title
                 $("#" + exploitId).append("<div>[" + x_val.name + "] " + x_val.title);
                 // description
