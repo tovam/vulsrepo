@@ -1633,7 +1633,7 @@ const displayChangelogDetail = function(ankerData) {
     let getPkg = function() {
         let result;
         $.each(changelogInfo.cveidInfo.affectedPackages, function (i, i_val) {
-            if (i_val.Name = package) {
+            if (i_val.name === package) {
                 result = i_val;
             };
         });
