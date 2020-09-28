@@ -312,30 +312,25 @@ const setEvents = function() {
     });
 
     // ---switch
-    $("[name='chkPivotSummary']").bootstrapSwitch();
-    $("[name='chkPivotCvss']").bootstrapSwitch();
-
-    if (db.get("vulsrepo_chkPivotSummary") === "false") {
-        $('input[name="chkPivotSummary"]').bootstrapSwitch('state', false, false);
-    }
-    if (db.get("vulsrepo_chkPivotCvss") === "false") {
-        $('input[name="chkPivotCvss"]').bootstrapSwitch('state', false, false);
-    }
-
-    $('input[name="chkPivotSummary"]').on('switchChange.bootstrapSwitch', function(event, state) {
-        if (state === false) {
-            db.set("vulsrepo_chkPivotSummary", "false");
-        } else {
-            db.remove("vulsrepo_chkPivotSummary");
+    let initSwitch = function(name) {
+        $("[name='" + name + "']").bootstrapSwitch();
+        if (db.get("vulsrepo_" + name) === "false") {
+            $('input[name="' + name + '"]').bootstrapSwitch('state', false, false);
         }
-    });
-    $('input[name="chkPivotCvss"]').on('switchChange.bootstrapSwitch', function(event, state) {
-        if (state === false) {
-            db.set("vulsrepo_chkPivotCvss", "false");
-        } else {
-            db.remove("vulsrepo_chkPivotCvss");
-        }
-    });
+
+        $('input[name="' + name + '"]').on('switchChange.bootstrapSwitch', function(event, state) {
+            if (state === false) {
+                db.set("vulsrepo_" + name, "false");
+            } else {
+                db.remove("vulsrepo_" + name);
+            }
+        });
+    };
+    initSwitch("chkPivotSummary");
+    initSwitch("chkPivotCvss");
+    initSwitch("chkCweTop25");
+    initSwitch("chkOwaspTopTen2017");
+    initSwitch("chkSansTop25");
 
     // ---priority
 
@@ -429,6 +424,9 @@ const createPivotData = function(resultArray) {
     const prioltyFlag = db.get("vulsrepo_pivotPriority");
     const summaryFlag = db.get("vulsrepo_chkPivotSummary");
     const cvssFlag = db.get("vulsrepo_chkPivotCvss");
+    const cweTop25Flag = db.get("vulsrepo_chkCweTop25");
+    const owaspTopTen2017Flag = db.get("vulsrepo_chkOwaspTopTen2017");
+    const sansTop25Flag = db.get("vulsrepo_chkSansTop25");
 
     $.each(resultArray, function(x, x_val) {
         if (Object.keys(x_val.data.scannedCves).length === 0) {
@@ -551,9 +549,15 @@ const createPivotData = function(resultArray) {
                                             cweIdStr = cweIdStr + "[!!]";
                                         }
                                     };
-                                    makeCweStr("cweTop25");
-                                    makeCweStr("owaspTopTen2017");
-                                    makeCweStr("sansTop25");
+                                    if (cweTop25Flag !== "false") {
+                                        makeCweStr("cweTop25");
+                                    }
+                                    if (owaspTopTen2017Flag !== "false") {
+                                        makeCweStr("owaspTopTen2017");
+                                    }
+                                    if (sansTop25Flag !== "false") {
+                                        makeCweStr("sansTop25");
+                                    }
                                     if (j < cweIds.length - 1) {
                                         cweIdStr = cweIdStr + ", ";
                                     }
