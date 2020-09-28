@@ -1415,6 +1415,10 @@ const displayDetail = function(cveID) {
                     $("#cweid-" + cweid).append(" (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
                     $("#cweid-" + cweid).append("<span>&nbsp;/&nbsp;</span>");
                     $("#cweid-" + cweid).append("<a href=\"" + detailLink.cwe_jvn.url + x_val + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)");
+                    if (data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
+                        // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
+                        $("#cweid-" + cweid).append(" <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>");
+                    }
                     if (data.cweDict[cweid].owaspTopTen2017 !== "") {
                         // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
                         let owaspLink = "";
@@ -1424,10 +1428,6 @@ const displayDetail = function(cveID) {
                             owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].ja;
                         }
                         $("#cweid-" + cweid).append(" <a href=\"" + owaspLink + "\" rel='noopener noreferrer' target='_blank' class='badge count'>OWASP Rank: " + data.cweDict[cweid].owaspTopTen2017 +"</a>");
-                    }
-                    if (data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
-                        // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
-                        $("#cweid-" + cweid).append(" <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>");
                     }
                     if (data.cweDict[cweid].sansTopTwentyfive !== "") {
                         // SANS Top25 https://www.sans.org/top25-software-errors/
