@@ -682,7 +682,7 @@ const detailLink = {
     },
     cweTopTwentyfive2019: {
         url: "https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html",
-        disp: "The CWE Top 25"
+        disp: "CWE Top 25"
     },
     owaspTopTen2017: {
         url: "https://github.com/OWASP/Top10/blob/master/2017/",
@@ -711,8 +711,8 @@ const detailLink = {
         8: {en: "https://github.com/OWASP/Top10/blob/master/2017/en/0xa8-insecure-deserialization.md",
             ja: "https://github.com/OWASP/Top10/blob/master/2017/ja/0xa8-insecure-deserialization.md"
         },
-        9: {en: "https://github.com/OWASP/Top10/blob/master/2017/en/0xa9-known-vulns.md<Paste>",
-            ja: "https://github.com/OWASP/Top10/blob/master/2017/ja/0xa9-known-vulns.md<Paste>"
+        9: {en: "https://github.com/OWASP/Top10/blob/master/2017/en/0xa9-known-vulns.md",
+            ja: "https://github.com/OWASP/Top10/blob/master/2017/ja/0xa9-known-vulns.md"
         },
         10: {en: "https://github.com/OWASP/Top10/blob/master/2017/en/0xaa-logging-detection-response.md",
             ja: "https://github.com/OWASP/Top10/blob/master/2017/ja/0xaa-logging-detection-response.md"
@@ -722,4 +722,10 @@ const detailLink = {
         url: "https://www.sans.org/top25-software-errors/",
         disp: "SANS Top 25"
     }
+}
+
+const cweTop = {
+    owaspTopTen2017: ["77", "89","564","917","287","384","220","310","312","319","326","359","611","22","284","285","639","2","16","388","79","502","223","778"],
+    cweTop25: ["119", "79", "20", "200", "125", "89", "416", "190", "352", "22", "78", "787", "287", "476", "732", "434", "611", "94", "798", "400", "772", "426", "502", "269", "295"],
+    sansTop25: ["89","78","120","79","306","862","798","311","434","807","250","352","22","494","863","829","732","676","327","131","307","601","134","190","759"]
 }

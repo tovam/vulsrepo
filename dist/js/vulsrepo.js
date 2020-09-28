@@ -534,27 +534,30 @@ const createPivotData = function(resultArray) {
                             if(cweIds[0].indexOf("NVD-CWE-") !== -1) {
                                 result["CweID"] = cweIds[0];
                             } else {
-                                // TODO OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
-                                // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
-                                let cweTop25 = ["119", "79", "20", "200", "125", "89", "416", "190", "352", "22", "78", "787", "287", "476", "732", "434", "611", "94", "798", "400", "772", "426", "502", "269", "295"]
-                                // TODO SANS Top25 https://www.sans.org/top25-software-errors/
                                 for(var j = 0; j < cweIds.length; j++) {
+                                    cweIdStr = cweIdStr + cweIds[j];
                                     let match = false;
-                                    for(var i = 0; i < cweTop25.length; i++) {
-                                        if(cweIds[j].indexOf(cweTop25[i]) !== -1) {
-                                            match = true;
-                                            break;
+                                    let makeCweStr = function(source) {
+                                        if (match === true) {
+                                            return;
                                         }
-                                    }
-                                    if (match === true) {
-                                        cweIdStr = cweIdStr + cweIds[j] + "[!!]";
-                                    } else {
-                                        cweIdStr = cweIdStr + cweIds[j];
-                                    }
+                                        for(var i = 0; i < cweTop[source].length; i++) {
+                                            if(cweIds[j] === "CWE-" + cweTop[source][i]) {
+                                                match = true;
+                                                break;
+                                            }
+                                        }
+                                        if (match === true) {
+                                            cweIdStr = cweIdStr + "[!!]";
+                                        }
+                                    };
+                                    makeCweStr("cweTop25");
+                                    makeCweStr("owaspTopTen2017");
+                                    makeCweStr("sansTop25");
                                     if (j < cweIds.length - 1) {
-                                        cweIdStr = cweIdStr + ",";
+                                        cweIdStr = cweIdStr + ", ";
                                     }
-                                }
+                            }
                                 result["CweID"] = "CHK-cweid-" + cweIdStr;
                             }
                         } else {
@@ -1008,7 +1011,7 @@ const addCweIDLink = function() {
     doms.each(function() {
         let cveid = $(this).text();
         cveid = cveid.replace("CHK-cweid-", "");
-        let cveids = cveid.split(',');
+        let cveids = cveid.split(', ');
         let generated = "";
         for (var i = 0; i < cveids.length; i++) {
             if (cveids[i].indexOf("NVD-CWE-") !== -1) {
@@ -1024,7 +1027,7 @@ const addCweIDLink = function() {
                 }
             }
             if (i < cveids.length - 1) {
-                generated = generated + ",";
+                generated = generated + ", ";
             }
         }
         $(this).text("").append(generated);
@@ -1404,7 +1407,7 @@ const displayDetail = function(cveID) {
                             name = data.cweDict[cweid].en.name;
                         }
                     }
-                    $("#cweid-" + cweid).append("CWE-" + cweid + " [" + name + "]");
+                    $("#cweid-" + cweid).append(cweid + " [" + name + "]");
                     $("#cweid-" + cweid).append(" (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
                     $("#cweid-" + cweid).append("<span>&nbsp;/&nbsp;</span>");
                     $("#cweid-" + cweid).append("<a href=\"" + detailLink.cwe_jvn.url + x_val + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)");
