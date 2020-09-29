@@ -716,11 +716,11 @@ const createPivotData = function(resultArray) {
                         }
 
                         if (y_val.cveContents[target].cvss3Score !== 0) {
-                            result["CVSS Score"] = y_val.cveContents[target].cvss3Score;
+                            result["CVSS Score"] = y_val.cveContents[target].cvss3Score.toFixed(1);
                             result["CVSS Severity"] = getSeverityV3(y_val.cveContents[target].cvss3Score);
                             result["CVSS Score Type"] = target + "V3";
                         } else if (y_val.cveContents[target].cvss2Score !== 0) {
-                            result["CVSS Score"] = y_val.cveContents[target].cvss2Score;
+                            result["CVSS Score"] = y_val.cveContents[target].cvss2Score.toFixed(1);
                             result["CVSS Severity"] = getSeverityV2(y_val.cveContents[target].cvss2Score);
                             result["CVSS Score Type"] = target;
                         }
@@ -1167,13 +1167,13 @@ const displayDetail = function(cveID) {
             }
 
             if (scoreV2 !== 0) {
-                $("#scoreText_" + target).text(scoreV2 + " (" + severityV2 + ")").addClass("cvss-" + severityV2);
+                $("#scoreText_" + target).text(scoreV2.toFixed(1) + " (" + severityV2 + ")").addClass("cvss-" + severityV2);
             } else {
                 $("#scoreText_" + target).text("None").addClass("cvss-None");
             }
 
             if (scoreV3 !== 0) {
-                $("#scoreText_" + target + "V3").text(scoreV3 + " (" + severityV3 + ")").addClass("cvss-" + severityV3);
+                $("#scoreText_" + target + "V3").text(scoreV3.toFixed(1) + " (" + severityV3 + ")").addClass("cvss-" + severityV3);
             } else {
                 $("#scoreText_" + target + "V3").text("None").addClass("cvss-None");
             }
