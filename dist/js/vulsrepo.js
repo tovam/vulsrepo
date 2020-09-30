@@ -191,6 +191,7 @@ const setPulldownDisplayChangeEvent = function(target) {
     $(target + ' a').on('click', function() {
         var value = db.getPivotConf($(this).attr('value'));
         db.set("vulsrepo_pivot_conf", value);
+        db.remove("vulsrepo_pivot_conf_tmp");
         initPivotTable();
     });
 };
