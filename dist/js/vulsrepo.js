@@ -6,6 +6,7 @@ $(document).ready(function() {
     setEvents();
     createFolderTree();
     db.remove("vulsrepo_pivot_conf");
+    db.remove("vulsrepo_pivot_conf_tmp");
     $('#drawerLeft').drawer('show');
 });
 
@@ -244,6 +245,7 @@ const setEvents = function() {
             configName = $("#input_saveDiag").val();
             if (configName !== "") {
                 db.setPivotConf(configName, db.get("vulsrepo_pivot_conf_tmp"));
+                db.remove("vulsrepo_pivot_conf_tmp");
             } else {
                 $("#alert_saveDiag_textbox").css("display", "");
                 return;
@@ -253,6 +255,7 @@ const setEvents = function() {
 
             if (configName !== "") {
                 db.setPivotConf(configName, db.get("vulsrepo_pivot_conf_tmp"));
+                db.remove("vulsrepo_pivot_conf_tmp");
             } else {
                 $("#alert_saveDiag_dropdown").css("display", "");
                 return;
@@ -280,6 +283,7 @@ const setEvents = function() {
         if (ret === true) {
             db.removePivotConf($("#drop_topmenu_hiddenValue").attr('value'));
             db.remove("vulsrepo_pivot_conf");
+            db.remove("vulsrepo_pivot_conf_tmp");
             $("#drop_topmenu_visibleValue").html("Select setting");
             $("#drop_topnemu_hiddenValue").val("");
             filterDisp.off("#label_pivot_conf");
@@ -290,6 +294,7 @@ const setEvents = function() {
 
     $("#clear_pivot_conf").click(function() {
         db.remove("vulsrepo_pivot_conf");
+        db.remove("vulsrepo_pivot_conf_tmp");
         $("#drop_topmenu_visibleValue").html("Select setting");
         $("#drop_topnemu_hiddenValue").val("");
         filterDisp.off("#label_pivot_conf");
@@ -973,7 +978,10 @@ const displayPivot = function(array) {
     if (url_param != null) {
         pivot_obj = url_param;
     } else {
-        pivot_obj = db.get("vulsrepo_pivot_conf");
+        pivot_obj = db.get("vulsrepo_pivot_conf_tmp");
+        if (pivot_obj === null) {
+            pivot_obj = db.get("vulsrepo_pivot_conf");
+        }
     }
 
     if (pivot_obj != null) {
