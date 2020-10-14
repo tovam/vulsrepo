@@ -3,12 +3,64 @@ $(document).ready(function() {
         localStorage.setItem("vulsrepo_pivot_conf_user_" + val.key, val.value);
     });
 
-    setEvents();
-    createFolderTree();
     db.remove("vulsrepo_pivot_conf");
     db.remove("vulsrepo_pivot_conf_tmp");
+    restoreParam();
+    setEvents();
+    createFolderTree();
     $('#drawerLeft').drawer('show');
 });
+
+const restoreParam = function() {
+    if (location.search !== "") {
+        try {
+            let param = [...new URLSearchParams(location.search).entries()].reduce((obj, e) => ({...obj, [e[0]]: e[1]}), {});
+
+            for (let [key, type] of Object.entries(vulsrepo_params)) {
+                if (param[key] !== undefined) {
+                    if (type === "boolean") {
+                        if (["", "null", "true", "false"].includes(param[key])) {
+                            if (param[key] === "false") {
+                                db.set(key, param[key]);
+                            } else {
+                                db.remove(key);
+                            }
+                        } else {
+                            showAlert("invalid parameter", param[key]);
+                        }
+                    } else if (type === "array") {
+                        let decode_str = LZString.decompressFromEncodedURIComponent(param[key]);
+                        if (decode_str === null) {
+                            showAlert("param decode error", decode_str);
+                        }
+                        url_param = JSON.parse(decode_str);
+                        let sorted_url_param = url_param.slice();
+                        let sorted_detailTaget = vulsrepo.detailTaget.slice();
+                        if (sorted_url_param.sort().toString() === sorted_detailTaget.sort().toString()) {
+                            db.set(key, url_param);
+                        } else {
+                            showAlert("invalid parameter", param[key]);
+                        }
+                    } else if (type === "dictionary") {
+                        let decode_str = LZString.decompressFromEncodedURIComponent(param[key]);
+                        if (decode_str === null) {
+                            showAlert("param decode error", decode_str);
+                        }
+                        url_param = JSON.parse(decode_str);
+                        db.set(key, url_param);
+                    }
+                }
+            }
+        } catch (e) {
+            showAlert("param parse error", e);
+            return;
+        }
+    }
+
+    var url = window.location.href
+    var new_url = url.replace(/\?.*$/, "");
+    history.replaceState(null, null, new_url);
+};
 
 const initData = function() {
     $.blockUI(blockUIoption);
@@ -135,9 +187,9 @@ const getData = function() {
                 data: json_data
             };
 
-		if (resultMap.data.jsonVersion === undefined) {
-               showAlert("Old JSON format", value.url);
-               $.unblockUI(blockUIoption);
+            if (resultMap.data.jsonVersion === undefined) {
+                showAlert("Old JSON format", value.url);
+                $.unblockUI(blockUIoption);
                 return;
             }
 
@@ -246,6 +298,7 @@ const setEvents = function() {
             configName = $("#input_saveDiag").val();
             if (configName !== "") {
                 db.setPivotConf(configName, db.get("vulsrepo_pivot_conf_tmp"));
+                db.set("vulsrepo_pivot_conf", db.get("vulsrepo_pivot_conf_tmp"));
                 db.remove("vulsrepo_pivot_conf_tmp");
             } else {
                 $("#alert_saveDiag_textbox").css("display", "");
@@ -256,6 +309,7 @@ const setEvents = function() {
 
             if (configName !== "") {
                 db.setPivotConf(configName, db.get("vulsrepo_pivot_conf_tmp"));
+                db.set("vulsrepo_pivot_conf", db.get("vulsrepo_pivot_conf_tmp"));
                 db.remove("vulsrepo_pivot_conf_tmp");
             } else {
                 $("#alert_saveDiag_dropdown").css("display", "");
@@ -377,6 +431,12 @@ const setEvents = function() {
 
     $("#pivot-link").click(function() {
         let str = location.href + "?vulsrepo_pivot_conf_tmp=" + LZString.compressToEncodedURIComponent(localStorage.getItem("vulsrepo_pivot_conf_tmp"));
+        str = str + "&vulsrepo_chkPivotSummary=" + db.get("vulsrepo_chkPivotSummary");
+        str = str + "&vulsrepo_chkPivotCvss=" + db.get("vulsrepo_chkPivotCvss");
+        str = str + "&vulsrepo_pivotPriority=" + LZString.compressToEncodedURIComponent(localStorage.getItem("vulsrepo_pivotPriority"));
+        str = str + "&vulsrepo_chkCweTop25=" + db.get("vulsrepo_chkCweTop25");
+        str = str + "&vulsrepo_chkOwaspTopTen2017=" + db.get("vulsrepo_chkOwaspTopTen2017");
+        str = str + "&vulsrepo_chkSansTop25=" + db.get("vulsrepo_chkSansTop25");
         $("#view_url_box").val("");
         $("#view_url_box").val(str);
         $("#modal-viewUrl").modal('show');
@@ -856,26 +916,6 @@ const getServerName = function(data) {
 
 const displayPivot = function(array) {
 
-    var url_param;
-    if (location.search !== "") {
-        try {
-            var decode_str = LZString.decompressFromEncodedURIComponent(location.search.substring(1).split('=')[1])
-            if (decode_str === null) {
-                showAlert("param decode error", decode_str);
-                return;
-            }
-            url_param = JSON.parse(decode_str);
-        } catch (e) {
-            showAlert("param parse error", e);
-            return;
-        }
-    }
-
-    var url = window.location.href
-    var new_url = url.replace(/\?.*$/, "");
-    history.replaceState(null, null, new_url);
-
-
     var derivers = $.pivotUtilities.derivers;
     var renderers = $.extend($.pivotUtilities.renderers, $.pivotUtilities.c3_renderers);
     var dateFormat = $.pivotUtilities.derivers.dateFormat;
@@ -976,13 +1016,9 @@ const displayPivot = function(array) {
     };
 
     var pivot_obj;
-    if (url_param != null) {
-        pivot_obj = url_param;
-    } else {
-        pivot_obj = db.get("vulsrepo_pivot_conf_tmp");
-        if (pivot_obj === null) {
-            pivot_obj = db.get("vulsrepo_pivot_conf");
-        }
+    pivot_obj = db.get("vulsrepo_pivot_conf_tmp");
+    if (pivot_obj === null) {
+        pivot_obj = db.get("vulsrepo_pivot_conf");
     }
 
     if (pivot_obj != null) {
