@@ -56,10 +56,6 @@ const restoreParam = function() {
             return;
         }
     }
-
-    var url = window.location.href
-    var new_url = url.replace(/\?.*$/, "");
-    history.replaceState(null, null, new_url);
 };
 
 const initData = function() {
@@ -915,6 +911,10 @@ const getServerName = function(data) {
 };
 
 const displayPivot = function(array) {
+
+    var url = window.location.href
+    var new_url = url.replace(/\?.*$/, "");
+    history.replaceState(null, null, new_url);
 
     var derivers = $.pivotUtilities.derivers;
     var renderers = $.extend($.pivotUtilities.renderers, $.pivotUtilities.c3_renderers);
