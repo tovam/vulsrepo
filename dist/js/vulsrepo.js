@@ -1581,7 +1581,12 @@ const displayDetail = function(cveID) {
         addCert("ja", "JPCERT");
         addCert("en", "USCERT");
     }
-    $("#count-cert").text(countCert);
+    if (countCert > 0) {
+        $("#count-cert").text(countCert);
+        $("#count-cert").show();
+    } else {
+        $("#count-cert").hide();
+    }
 
     // ---Exploits---
     let countExploit = 0;
@@ -1625,7 +1630,12 @@ const displayDetail = function(cveID) {
         mode: 'words',
         truncate: 50
     });
-    $("#count-exploit").text(countExploit);
+    if (countExploit > 0) {
+        $("#count-exploit").text(countExploit);
+        $("#count-exploit").show();
+    } else {
+        $("#count-exploit").hide();
+    }
 
     // ---References---
     let countRef = 0;
