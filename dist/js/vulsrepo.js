@@ -790,21 +790,21 @@ const createPivotData = function(resultArray) {
                         if (cvssFlag !== "false") {
                             if (y_val.cveContents[target].cvss3Vector !== "") { //ex) CVE-2016-5483
                                 var arrayVector = getSplitArray(y_val.cveContents[target].cvss3Vector);
-                                let cvssv3 = getVectorV3.cvss(arrayVector[1]);
+                                let cvssv3 = getVectorV3.cvss(arrayVector[1], "");
                                 result["CVSSv3 (AV)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[2]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[2], "");
                                 result["CVSSv3 (AC)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[3]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[3], arrayVector[5]);
                                 result["CVSSv3 (PR)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[4]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[4], "");
                                 result["CVSSv3 (UI)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[5]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[5], "");
                                 result["CVSSv3 (S)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[6]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[6], "");
                                 result["CVSSv3 (C)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[7]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[7], "");
                                 result["CVSSv3 (I)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[8]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[8], "");
                                 result["CVSSv3 (A)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
                             } else {
                                 result["CVSSv3 (AV)"] = "Unknown";
@@ -818,12 +818,18 @@ const createPivotData = function(resultArray) {
                             }
                             if (y_val.cveContents[target].cvss2Vector !== "") { //ex) CVE-2016-5483
                                 var arrayVector = getSplitArray(y_val.cveContents[target].cvss2Vector);
-                                result["CVSS (AV)"] = getVectorV2.cvss(arrayVector[0])[0];
-                                result["CVSS (AC)"] = getVectorV2.cvss(arrayVector[1])[0];
-                                result["CVSS (Au)"] = getVectorV2.cvss(arrayVector[2])[0];
-                                result["CVSS (C)"] = getVectorV2.cvss(arrayVector[3])[0];
-                                result["CVSS (I)"] = getVectorV2.cvss(arrayVector[4])[0];
-                                result["CVSS (A)"] = getVectorV2.cvss(arrayVector[5])[0];
+                                let cvssv2 = getVectorV2.cvss(arrayVector[0]);
+                                result["CVSS (AV)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
+                                cvssv2 = getVectorV2.cvss(arrayVector[1]);
+                                result["CVSS (AC)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
+                                cvssv2 = getVectorV2.cvss(arrayVector[2]);
+                                result["CVSS (Au)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
+                                cvssv2 = getVectorV2.cvss(arrayVector[3]);
+                                result["CVSS (C)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
+                                cvssv2 = getVectorV2.cvss(arrayVector[4]);
+                                result["CVSS (I)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
+                                cvssv2 = getVectorV2.cvss(arrayVector[5]);
+                                result["CVSS (A)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
                             } else {
                                 result["CVSS (AV)"] = "Unknown";
                                 result["CVSS (AC)"] = "Unknown";
@@ -1254,14 +1260,14 @@ const displayDetail = function(cveID) {
             var resultV3 = [];
             if (data.cveContents[target].cvss3Vector !== "") {
                 var arrayVectorV3 = getSplitArray(data.cveContents[target].cvss3Vector);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[1])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[2])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[3])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[4])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[5])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[6])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[7])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[8])[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[1], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[2], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[3], arrayVectorV3[5])[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[4], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[5], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[6], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[7], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[8], "")[1]);
             }
 
         } else {
