@@ -38,73 +38,73 @@ const getVectorV2 = {
             case 'AV':
                 switch (subscore[1]) {
                     case 'L':
-                        return Array("LOCAL", 1);
+                        return Array("LOCAL", 0.395);
                         break;
                     case 'A':
-                        return Array("ADJACENT_NETWORK", 2);
+                        return Array("ADJACENT_NETWORK", 0.646);
                         break;
                     case 'N':
-                        return Array("NETWORK", 3);
+                        return Array("NETWORK", 1);
                         break;
                 }
             case 'AC':
                 switch (subscore[1]) {
                     case 'H':
-                        return Array("HIGH", 1);
+                        return Array("HIGH", 0.35);
                         break;
                     case 'M':
-                        return Array("MEDIUM", 2);
+                        return Array("MEDIUM", 0.61);
                         break;
                     case 'L':
-                        return Array("LOW", 3);
+                        return Array("LOW", 0.71);
                         break;
                 }
             case 'Au':
                 switch (subscore[1]) {
                     case 'M':
-                        return Array("MULTIPLE_INSTANCES", 1);
+                        return Array("MULTIPLE_INSTANCES", 0.45);
                         break;
                     case 'S':
-                        return Array("SINGLE_INSTANCE", 2);
+                        return Array("SINGLE_INSTANCE", 0.56);
                         break;
                     case 'N':
-                        return Array("NONE", 3);
+                        return Array("NONE", 0.704);
                         break;
                 }
             case 'C':
                 switch (subscore[1]) {
                     case 'N':
-                        return Array("NONE", 1);
+                        return Array("NONE", 0);
                         break;
                     case 'P':
-                        return Array("PARTIAL", 2);
+                        return Array("PARTIAL", 0.275);
                         break;
                     case 'C':
-                        return Array("COMPLETE", 3);
+                        return Array("COMPLETE", 0.660);
                         break;
                 }
             case 'I':
                 switch (subscore[1]) {
                     case 'N':
-                        return Array("NONE", 1);
+                        return Array("NONE", 0);
                         break;
                     case 'P':
-                        return Array("PARTIAL", 2);
+                        return Array("PARTIAL", 0.275);
                         break;
                     case 'C':
-                        return Array("COMPLETE", 3);
+                        return Array("COMPLETE", 0.660);
                         break;
                 }
             case 'A':
                 switch (subscore[1]) {
                     case 'N':
-                        return Array("NONE", 1);
+                        return Array("NONE", 0);
                         break;
                     case 'P':
-                        return Array("PARTIAL", 2);
+                        return Array("PARTIAL", 0.275);
                         break;
                     case 'C':
-                        return Array("COMPLETE", 3);
+                        return Array("COMPLETE", 0.660);
                         break;
                 }
         }
@@ -115,98 +115,106 @@ const getVectorV2 = {
 
 const getVectorV3 = {
 
-    cvss: function(vector) {
+    cvss: function(vector, scopeVector) {
         const subscore = vector.split(":");
 
         switch (subscore[0]) {
             case 'AV':
                 switch (subscore[1]) {
                     case 'P':
-                        return Array("PHYSICAL", 1);
+                        return Array("PHYSICAL", 0.20);
                         break;
                     case 'L':
-                        return Array("LOCAL", 2);
+                        return Array("LOCAL", 0.55);
                         break;
                     case 'A':
-                        return Array("ADJACENT_NETWORK", 3);
+                        return Array("ADJACENT_NETWORK", 0.62);
                         break;
                     case 'N':
-                        return Array("NETWORK", 4);
+                        return Array("NETWORK", 0.85);
                         break;
                 }
             case 'AC':
                 switch (subscore[1]) {
                     case 'H':
-                        return Array("HIGH", 1);
+                        return Array("HIGH", 0.44);
                         break;
                     case 'L':
-                        return Array("LOW", 3);
+                        return Array("LOW", 0.77);
                         break;
                 }
             case 'PR':
                 switch (subscore[1]) {
                     case 'H':
-                        return Array("HIGH", 1);
+                        if (scopeVector === "S:U") {
+                            return Array("HIGH", 0.27);
+                        } else {
+                            return Array("HIGH", 0.50);
+                        }
                         break;
                     case 'L':
-                        return Array("LOW", 2);
+                        if (scopeVector === "S:U") {
+                            return Array("LOW", 0.62); // Score CHANGED 0.68
+                        } else {
+                            return Array("LOW", 0.68); // Score CHANGED 0.68
+                        }
                         break;
                     case 'N':
-                        return Array("NONE", 3);
+                        return Array("NONE", 0.85);
                         break;
                 }
             case 'UI':
                 switch (subscore[1]) {
                     case 'R':
-                        return Array("REQUIRED", 1);
+                        return Array("REQUIRED", 0.62);
                         break;
                     case 'N':
-                        return Array("NONE", 3);
+                        return Array("NONE", 0.85);
                         break;
                 }
             case 'S':
                 switch (subscore[1]) {
                     case 'U':
-                        return Array("UNCHANGED", 1);
+                        return Array("UNCHANGED", 0);
                         break;
                     case 'C':
-                        return Array("CHANGED", 3);
+                        return Array("CHANGED", 0);
                         break;
                 }
             case 'C':
                 switch (subscore[1]) {
                     case 'N':
-                        return Array("NONE", 1);
+                        return Array("NONE", 0);
                         break;
                     case 'L':
-                        return Array("LOW", 2);
+                        return Array("LOW", 0.22);
                         break;
                     case 'H':
-                        return Array("HIGH", 3);
+                        return Array("HIGH", 0.56);
                         break;
                 }
             case 'I':
                 switch (subscore[1]) {
                     case 'N':
-                        return Array("NONE", 1);
+                        return Array("NONE", 0);
                         break;
                     case 'L':
-                        return Array("LOW", 2);
+                        return Array("LOW", 0.22);
                         break;
                     case 'H':
-                        return Array("HIGH", 3);
+                        return Array("HIGH", 0.56);
                         break;
                 }
             case 'A':
                 switch (subscore[1]) {
                     case 'N':
-                        return Array("NONE", 1);
+                        return Array("NONE", 0);
                         break;
                     case 'L':
-                        return Array("LOW", 2);
+                        return Array("LOW", 0.22);
                         break;
                     case 'H':
-                        return Array("HIGH", 3);
+                        return Array("HIGH", 0.56);
                         break;
                 }
         }
