@@ -531,6 +531,7 @@ const createPivotData = function(resultArray) {
                 "PoC": "healthy",
                 "Changelog": "healthy",
                 "DetectionMethod": "healthy",
+                "ConfidenceScore": "healthy",
                 "Published": "healthy",
                 "Last Modified": "healthy",
             };
@@ -686,6 +687,7 @@ const createPivotData = function(resultArray) {
 
                     DetectionMethod = y_val.confidences[0].detectionMethod;
                     result["DetectionMethod"] = DetectionMethod;
+                    result["ConfidenceScore"] = y_val.confidences[0].score;
                     if (pkgInfo !== undefined) {
                         if (pkgInfo.changelog !== undefined && pkgInfo.changelog.contents !== "") {
                             result["Changelog"] = "CHK-changelog-" + y_val.cveID + "," + x_val.scanTime + "," + x_val.data.serverName + "," + x_val.data.container.name + "," + pkgName;
