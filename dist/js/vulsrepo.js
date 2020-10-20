@@ -78,7 +78,7 @@ const initPivotTable = function() {
     $.blockUI(blockUIoption);
     setTimeout(function() {
         displayPivot(vulsrepo.detailPivotData);
-        setPulldown("#drop_topmenu");
+        setPulldown("#drop_topmenu", true);
         setPulldownDisplayChangeEvent("#drop_topmenu");
         filterDisp.off("pivot_conf");
         $.unblockUI(blockUIoption);
@@ -221,10 +221,16 @@ const getSelectedFile = function() {
     return selectedFile;
 };
 
-const setPulldown = function(target) {
+const setPulldown = function(target, withDefault) {
     $(target).empty();
     $.each(db.listPivotConf(), function(index, val) {
-        $(target).append('<li><a href="javascript:void(0)" value=\"' + val + '\">' + val + '</a></li>');
+        let matchDefault = false;
+        if (withDefault === false) {
+            matchDefault = isDefaultFilter(val);
+        }
+        if (matchDefault === false) {
+            $(target).append('<li><a href="javascript:void(0)" value=\"' + val + '\">' + val + '</a></li>');
+        }
     });
 
     $(target + ' a').off('click');
@@ -237,11 +243,25 @@ const setPulldown = function(target) {
 
 const setPulldownDisplayChangeEvent = function(target) {
     $(target + ' a').on('click', function() {
-        var value = db.getPivotConf($(this).attr('value'));
-        db.set("vulsrepo_pivot_conf", value);
+        var val = $(this).attr('value');
+        var conf = db.getPivotConf(val);
+        db.set("vulsrepo_pivot_conf", conf);
         db.remove("vulsrepo_pivot_conf_tmp");
         initPivotTable();
+        let matchDefault = isDefaultFilter(val);
+        $("#delete_pivot_conf").prop("disabled", matchDefault);
     });
+};
+
+const isDefaultFilter = function(val) {
+    let result = false;
+    $.each(vulsrepo_template, function(index, temp) {
+        if (val === temp.key) {
+            result = true;
+            return;
+        }
+    });
+    return result;
 };
 
 const setEvents = function() {
@@ -274,7 +294,7 @@ const setEvents = function() {
         $("#drop_saveDiag_visibleValue").html("Select filter");
         $("#drop_saveDiag_hiddenValue").val("");
 
-        setPulldown("#drop_saveDiag");
+        setPulldown("#drop_saveDiag", false);
         $("#modal-saveDiag").modal('show');
     });
 
@@ -293,10 +313,18 @@ const setEvents = function() {
         if ($('input[name=radio_setting]:eq(0)').prop('checked')) {
             configName = $("#input_saveDiag").val();
             if (configName !== "") {
-                db.setPivotConf(configName, db.get("vulsrepo_pivot_conf_tmp"));
-                db.set("vulsrepo_pivot_conf", db.get("vulsrepo_pivot_conf_tmp"));
-                db.remove("vulsrepo_pivot_conf_tmp");
+                let matchDefault = isDefaultFilter(configName);
+                if (matchDefault === true) {
+                    $("#alert_saveDiag_textbox").text("'" + configName + "' is reserved filter name.");
+                    $("#alert_saveDiag_textbox").css("display", "");
+                    return;
+                } else {
+                    db.setPivotConf(configName, db.get("vulsrepo_pivot_conf_tmp"));
+                    db.set("vulsrepo_pivot_conf", db.get("vulsrepo_pivot_conf_tmp"));
+                    db.remove("vulsrepo_pivot_conf_tmp");
+                }
             } else {
+                $("#alert_saveDiag_textbox").text("Filter name cannot be empty.");
                 $("#alert_saveDiag_textbox").css("display", "");
                 return;
             }
@@ -314,10 +342,11 @@ const setEvents = function() {
 
         }
 
-        setPulldown("#drop_topmenu");
+        setPulldown("#drop_topmenu", true);
         setPulldownDisplayChangeEvent("#drop_topmenu");
         $("#drop_topmenu_visibleValue").html(configName);
         $("#drop_topnemu_hiddenValue").val(configName);
+        $("#delete_pivot_conf").prop("disabled", false);
 
         $("#modal-saveDiag").modal('hide');
         filterDisp.on("#label_pivot_conf");
