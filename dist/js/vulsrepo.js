@@ -1312,8 +1312,8 @@ const displayDetail = function(cveID) {
         } else {
             $("#scoreText_" + dest).text("None").addClass("cvss-None");
             $("#scoreText_" + dest + "V3").text("None").addClass("cvss-None");
-            $("#summary_" + dest).append("NO DATA");
-            $("#summary_" + dest + "V3").append("NO DATA");
+            $("#summary_" + dest).text("NO DATA");
+            $("#summary_" + dest + "V3").text("NO DATA");
             $("#lastModified_" + dest).text("------");
             $("#lastModified_" + dest + "V3").text("------");
         }
