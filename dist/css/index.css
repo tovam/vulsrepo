@@ -11,22 +11,6 @@ body {
     background-color: #ddd
 }
 
-.pvt-cvss-Critical {
-    background-color: #CB4829 !important;
-}
-
-.pvt-cvss-High {
-    background-color: #D59533 !important;
-}
-
-.pvt-cvss-Medium {
-    background-color: #DFD238 !important;
-}
-
-.pvt-cvss-Low {
-    background-color: #93B447 !important;
-}
-
 .notfixyet-true {
     color: #CB4829;
     font-weight: bold;
@@ -71,64 +55,48 @@ a {
 }
 
 .cvss-Critical {
-    background-color: #CB4829;
+    text-transform: capitalize;
+    background-color: #CB4829 !important;
     color: black
 }
 
 .cvss-High {
-    background-color: #D59533;
+    text-transform: capitalize;
+    background-color: #D59533 !important;
     color: black
 }
 
 .cvss-Medium {
-    background-color: #DFD238;
+    text-transform: capitalize;
+    background-color: #DFD238 !important;
     color: black
 }
 
 .cvss-Low {
-    background-color: #93B447;
+    text-transform: capitalize;
+    background-color: #93B447 !important;
     color: black
 }
 
 .cvss-None {
-    background-color: gray;
+    text-transform: capitalize;
+    background-color: gray !important;
     color: black
 }
 
 /*for Amazon Linux */
-.cvss-critical {
-    text-transform: capitalize;
-    background-color: #CB4829;
-    color: black
-}
 
-.cvss-important {
+.cvss-Important {
     text-transform: capitalize;
-    background-color: #D59533;
-    color: black
-}
-
-.cvss-medium {
-    text-transform: capitalize;
-    background-color: #DFD238;
-    color: black
-}
-
-.cvss-low {
-    text-transform: capitalize;
-    background-color: #93B447;
+    background-color: #D59533 !important;
     color: black
 }
 
 /*for redhat https://access.redhat.com/security/updates/classification/*/
 
-.cvss-Important {
-    background-color: #D59533;
-    color: black
-}
-
 .cvss-Moderate {
-    background-color: #DFD238;
+    text-transform: capitalize;
+    background-color: #DFD238 !important;
     color: black
 }
 
@@ -136,48 +104,34 @@ a {
 /*for ubuntu https://people.canonical.com/~ubuntu-security/cve/priority.html*/
 
 .cvss-Negligible {
-    background-color: #61C1BE;
+    text-transform: capitalize;
+    background-color: #61C1BE !important;
     color: black
 }
 
 .cvss-Unknown {
-    background-color: gray;
+    text-transform: capitalize;
+    background-color: gray !important;
     color: black
 }
 
 .cvss-Pending {
-    background-color: #796BAF;
+    text-transform: capitalize;
+    background-color: #796BAF !important;
     color: black
 }
 
-.cvss-NotVulnerable {
-    background-color: #BA79B1;
+.cvss-Notvulnerable {
+    text-transform: capitalize;
+    background-color: #BA79B1 !important;
     color: black
 }
 
 /*for Debian Security Tracker https://security-team.debian.org/security_tracker.html#severity-levels */
 
-.cvss-high {
-    background-color: #D59533;
+.cvss-Unimportant {
     text-transform: capitalize;
-    color: black
-}
-
-.cvss-medium {
-    background-color: #DFD238;
-    text-transform: capitalize;
-    color: black
-}
-
-.cvss-low {
-    background-color: #93B447;
-    text-transform: capitalize;
-    color: black
-}
-
-.cvss-unimportant {
-    background-color: #61C1BE;
-    text-transform: capitalize;
+    background-color: #61C1BE !important;
     color: black
 }
 
