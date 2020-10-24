@@ -51,6 +51,7 @@ const restoreParam = function() {
                     }
                 }
             }
+            filterDisp.on("#label_pivot_conf");
         } catch (e) {
             showAlert("param parse error", e);
             return;
