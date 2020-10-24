@@ -223,7 +223,7 @@ const setEvents = function() {
         $("#alert_saveDiag_textbox").css("display", "none");
         $("#alert_saveDiag_dropdown").css("display", "none");
         $("#input_saveDiag").val("");
-        $("#drop_saveDiag_visibleValue").html("Select setting");
+        $("#drop_saveDiag_visibleValue").html("Select filter");
         $("#drop_saveDiag_hiddenValue").val("");
 
         setPulldown("#drop_saveDiag");
@@ -285,7 +285,7 @@ const setEvents = function() {
             db.removePivotConf($("#drop_topmenu_hiddenValue").attr('value'));
             db.remove("vulsrepo_pivot_conf");
             db.remove("vulsrepo_pivot_conf_tmp");
-            $("#drop_topmenu_visibleValue").html("Select setting");
+            $("#drop_topmenu_visibleValue").html("Select filter");
             $("#drop_topnemu_hiddenValue").val("");
             fadeAlert("#alert_pivot_conf");
             initPivotTable();
@@ -295,7 +295,7 @@ const setEvents = function() {
     $("#clear_pivot_conf").click(function() {
         db.remove("vulsrepo_pivot_conf");
         db.remove("vulsrepo_pivot_conf_tmp");
-        $("#drop_topmenu_visibleValue").html("Select setting");
+        $("#drop_topmenu_visibleValue").html("Select filter");
         $("#drop_topnemu_hiddenValue").val("");
         fadeAlert("#alert_pivot_conf");
         initPivotTable();
