@@ -1695,6 +1695,15 @@ const displayDetail = function(cveID) {
     // ---Tab Package
     var pkgData = createDetailPackageData(cveID);
     packageTable.destroy();
+
+    packageTable.on( 'draw', function () {
+        $("#table-package").find("td:contains('Fixed')").removeClass("notfixyet-true").addClass("notfixyet-false");
+        $("#table-package").find("td:contains('Unfixed')").removeClass("notfixyet-false").addClass("notfixyet-true");
+
+        // ---package changelog event
+        addEventDisplayChangelog();
+    } );
+
     packageTable = $("#table-package")
         .DataTable({
             "data": pkgData,
@@ -1729,12 +1738,6 @@ const displayDetail = function(cveID) {
                 data: "NotFixedYet"
             }]
         });
-
-    $("#table-package").find("td:contains('Fixed')").removeClass("notfixyet-true").addClass("notfixyet-false");
-    $("#table-package").find("td:contains('Unfixed')").removeClass("notfixyet-false").addClass("notfixyet-true");
-
-    // ---package changelog event
-    addEventDisplayChangelog();
 
     $("#modal-detail").modal('show');
     setTimeout(function() { packageTable.columns.adjust(); }, 200);
