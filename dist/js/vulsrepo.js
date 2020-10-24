@@ -51,6 +51,7 @@ const restoreParam = function() {
                     }
                 }
             }
+            filterDisp.on("#label_pivot_conf");
         } catch (e) {
             showAlert("param parse error", e);
             return;
@@ -80,7 +81,6 @@ const initPivotTable = function() {
         displayPivot(vulsrepo.detailPivotData);
         setPulldown("#drop_topmenu", true);
         setPulldownDisplayChangeEvent("#drop_topmenu");
-        filterDisp.off("pivot_conf");
         $.unblockUI(blockUIoption);
     }, 500);
 };
@@ -248,6 +248,7 @@ const setPulldownDisplayChangeEvent = function(target) {
         db.set("vulsrepo_pivot_conf", conf);
         db.remove("vulsrepo_pivot_conf_tmp");
         initPivotTable();
+        filterDisp.on("#label_pivot_conf");
         let matchDefault = isDefaultFilter(val);
         $("#delete_pivot_conf").prop("disabled", matchDefault);
     });
@@ -366,7 +367,6 @@ const setEvents = function() {
             db.remove("vulsrepo_pivot_conf_tmp");
             $("#drop_topmenu_visibleValue").html("Select filter");
             $("#drop_topnemu_hiddenValue").val("");
-            filterDisp.off("#label_pivot_conf");
             fadeAlert("#alert_pivot_conf");
             initPivotTable();
         }
@@ -377,7 +377,6 @@ const setEvents = function() {
         db.remove("vulsrepo_pivot_conf_tmp");
         $("#drop_topmenu_visibleValue").html("Select filter");
         $("#drop_topnemu_hiddenValue").val("");
-        filterDisp.off("#label_pivot_conf");
         fadeAlert("#alert_pivot_conf");
         initPivotTable();
     });
@@ -1065,7 +1064,6 @@ const displayPivot = function(array) {
         pivot_attr["rowOrder"] = pivot_obj["rowOrder"];
         pivot_attr["colOrder"] = pivot_obj["colOrder"];
         pivot_attr["rendererOptions"] = pivot_obj["rendererOptions"];
-        filterDisp.on("#label_pivot_conf");
     } else {
         filterDisp.off("#label_pivot_conf");
     }
