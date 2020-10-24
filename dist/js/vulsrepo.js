@@ -3,12 +3,60 @@ $(document).ready(function() {
         localStorage.setItem("vulsrepo_pivot_conf_user_" + val.key, val.value);
     });
 
-    setEvents();
-    createFolderTree();
     db.remove("vulsrepo_pivot_conf");
     db.remove("vulsrepo_pivot_conf_tmp");
+    restoreParam();
+    setEvents();
+    createFolderTree();
     $('#drawerLeft').drawer('show');
 });
+
+const restoreParam = function() {
+    if (location.search !== "") {
+        try {
+            let param = [...new URLSearchParams(location.search).entries()].reduce((obj, e) => ({...obj, [e[0]]: e[1]}), {});
+
+            for (let [key, type] of Object.entries(vulsrepo_params)) {
+                if (param[key] !== undefined) {
+                    if (type === "boolean") {
+                        if (["", "null", "true", "false"].includes(param[key])) {
+                            if (param[key] === "false") {
+                                db.set(key, param[key]);
+                            } else {
+                                db.remove(key);
+                            }
+                        } else {
+                            showAlert("invalid parameter", param[key]);
+                        }
+                    } else if (type === "array") {
+                        let decode_str = LZString.decompressFromEncodedURIComponent(param[key]);
+                        if (decode_str === null) {
+                            showAlert("param decode error", decode_str);
+                        }
+                        url_param = JSON.parse(decode_str);
+                        let sorted_url_param = url_param.slice();
+                        let sorted_detailTaget = vulsrepo.detailTaget.slice();
+                        if (sorted_url_param.sort().toString() === sorted_detailTaget.sort().toString()) {
+                            db.set(key, url_param);
+                        } else {
+                            showAlert("invalid parameter", param[key]);
+                        }
+                    } else if (type === "dictionary") {
+                        let decode_str = LZString.decompressFromEncodedURIComponent(param[key]);
+                        if (decode_str === null) {
+                            showAlert("param decode error", decode_str);
+                        }
+                        url_param = JSON.parse(decode_str);
+                        db.set(key, url_param);
+                    }
+                }
+            }
+        } catch (e) {
+            showAlert("param parse error", e);
+            return;
+        }
+    }
+};
 
 const initData = function() {
     $.blockUI(blockUIoption);
@@ -30,7 +78,7 @@ const initPivotTable = function() {
     $.blockUI(blockUIoption);
     setTimeout(function() {
         displayPivot(vulsrepo.detailPivotData);
-        setPulldown("#drop_topmenu");
+        setPulldown("#drop_topmenu", true);
         setPulldownDisplayChangeEvent("#drop_topmenu");
         $.unblockUI(blockUIoption);
     }, 500);
@@ -134,9 +182,9 @@ const getData = function() {
                 data: json_data
             };
 
-		if (resultMap.data.jsonVersion === undefined) {
-               showAlert("Old JSON format", value.url);
-               $.unblockUI(blockUIoption);
+            if (resultMap.data.jsonVersion === undefined) {
+                showAlert("Old JSON format", value.url);
+                $.unblockUI(blockUIoption);
                 return;
             }
 
@@ -172,10 +220,16 @@ const getSelectedFile = function() {
     return selectedFile;
 };
 
-const setPulldown = function(target) {
+const setPulldown = function(target, withDefault) {
     $(target).empty();
     $.each(db.listPivotConf(), function(index, val) {
-        $(target).append('<li><a href="javascript:void(0)" value=\"' + val + '\">' + val + '</a></li>');
+        let matchDefault = false;
+        if (withDefault === false) {
+            matchDefault = isDefaultFilter(val);
+        }
+        if (matchDefault === false) {
+            $(target).append('<li><a href="javascript:void(0)" value=\"' + val + '\">' + val + '</a></li>');
+        }
     });
 
     $(target + ' a').off('click');
@@ -188,12 +242,26 @@ const setPulldown = function(target) {
 
 const setPulldownDisplayChangeEvent = function(target) {
     $(target + ' a').on('click', function() {
-        var value = db.getPivotConf($(this).attr('value'));
-        db.set("vulsrepo_pivot_conf", value);
+        var val = $(this).attr('value');
+        var conf = db.getPivotConf(val);
+        db.set("vulsrepo_pivot_conf", conf);
         db.remove("vulsrepo_pivot_conf_tmp");
         initPivotTable();
         filterDisp.on("#label_pivot_conf");
+        let matchDefault = isDefaultFilter(val);
+        $("#delete_pivot_conf").prop("disabled", matchDefault);
     });
+};
+
+const isDefaultFilter = function(val) {
+    let result = false;
+    $.each(vulsrepo_template, function(index, temp) {
+        if (val === temp.key) {
+            result = true;
+            return;
+        }
+    });
+    return result;
 };
 
 const setEvents = function() {
@@ -226,7 +294,7 @@ const setEvents = function() {
         $("#drop_saveDiag_visibleValue").html("Select filter");
         $("#drop_saveDiag_hiddenValue").val("");
 
-        setPulldown("#drop_saveDiag");
+        setPulldown("#drop_saveDiag", false);
         $("#modal-saveDiag").modal('show');
     });
 
@@ -245,9 +313,18 @@ const setEvents = function() {
         if ($('input[name=radio_setting]:eq(0)').prop('checked')) {
             configName = $("#input_saveDiag").val();
             if (configName !== "") {
-                db.setPivotConf(configName, db.get("vulsrepo_pivot_conf_tmp"));
-                db.remove("vulsrepo_pivot_conf_tmp");
+                let matchDefault = isDefaultFilter(configName);
+                if (matchDefault === true) {
+                    $("#alert_saveDiag_textbox").text("'" + configName + "' is reserved filter name.");
+                    $("#alert_saveDiag_textbox").css("display", "");
+                    return;
+                } else {
+                    db.setPivotConf(configName, db.get("vulsrepo_pivot_conf_tmp"));
+                    db.set("vulsrepo_pivot_conf", db.get("vulsrepo_pivot_conf_tmp"));
+                    db.remove("vulsrepo_pivot_conf_tmp");
+                }
             } else {
+                $("#alert_saveDiag_textbox").text("Filter name cannot be empty.");
                 $("#alert_saveDiag_textbox").css("display", "");
                 return;
             }
@@ -256,6 +333,7 @@ const setEvents = function() {
 
             if (configName !== "") {
                 db.setPivotConf(configName, db.get("vulsrepo_pivot_conf_tmp"));
+                db.set("vulsrepo_pivot_conf", db.get("vulsrepo_pivot_conf_tmp"));
                 db.remove("vulsrepo_pivot_conf_tmp");
             } else {
                 $("#alert_saveDiag_dropdown").css("display", "");
@@ -264,10 +342,11 @@ const setEvents = function() {
 
         }
 
-        setPulldown("#drop_topmenu");
+        setPulldown("#drop_topmenu", true);
         setPulldownDisplayChangeEvent("#drop_topmenu");
         $("#drop_topmenu_visibleValue").html(configName);
         $("#drop_topnemu_hiddenValue").val(configName);
+        $("#delete_pivot_conf").prop("disabled", false);
 
         $("#modal-saveDiag").modal('hide');
         filterDisp.on("#label_pivot_conf");
@@ -350,7 +429,7 @@ const setEvents = function() {
         db.set("vulsrepo_pivotPriority", vulsrepo.detailTaget);
     }
 
-    if (priority != null && priority.length !== 8) {
+    if (priority != null && priority.length !== 9) {
         db.set("vulsrepo_pivotPriority", vulsrepo.detailTaget);
     }
 
@@ -375,6 +454,12 @@ const setEvents = function() {
 
     $("#pivot-link").click(function() {
         let str = location.href + "?vulsrepo_pivot_conf_tmp=" + LZString.compressToEncodedURIComponent(localStorage.getItem("vulsrepo_pivot_conf_tmp"));
+        str = str + "&vulsrepo_chkPivotSummary=" + db.get("vulsrepo_chkPivotSummary");
+        str = str + "&vulsrepo_chkPivotCvss=" + db.get("vulsrepo_chkPivotCvss");
+        str = str + "&vulsrepo_pivotPriority=" + LZString.compressToEncodedURIComponent(localStorage.getItem("vulsrepo_pivotPriority"));
+        str = str + "&vulsrepo_chkCweTop25=" + db.get("vulsrepo_chkCweTop25");
+        str = str + "&vulsrepo_chkOwaspTopTen2017=" + db.get("vulsrepo_chkOwaspTopTen2017");
+        str = str + "&vulsrepo_chkSansTop25=" + db.get("vulsrepo_chkSansTop25");
         $("#view_url_box").val("");
         $("#view_url_box").val(str);
         $("#modal-viewUrl").modal('show');
@@ -473,6 +558,7 @@ const createPivotData = function(resultArray) {
                 "PoC": "healthy",
                 "Changelog": "healthy",
                 "DetectionMethod": "healthy",
+                "ConfidenceScore": "healthy",
                 "Published": "healthy",
                 "Last Modified": "healthy",
             };
@@ -531,8 +617,12 @@ const createPivotData = function(resultArray) {
 
                     result["ServerName"] = getServerName(x_val.data);
 
-                    if (y_val.cveContents !== undefined && y_val.cveContents.nvd !== undefined) {
-                        let cweIds = y_val.cveContents.nvd.cweIDs;
+                    var getCweId = function(target) {
+                        if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined) {
+                            return false;
+                        }
+
+                        let cweIds = y_val.cveContents[target].cweIDs;
                         let cweIdStr = "";
                         if (cweIds !== undefined) {
                             // NVD-CWE-Other and NVD-CWE-noinfo
@@ -571,12 +661,17 @@ const createPivotData = function(resultArray) {
                                 }
                                 result["CweID"] = "CHK-cweid-" + cweIdStr;
                             }
-                        } else {
-                            result["CweID"] = "None";
                         }
-                    } else {
-                        result["CweID"] = "None";
-                    }
+                        return true;
+                    };
+
+                    var cweFlag = false;
+                    result["CweID"] = "None";
+                    $.each(prioltyFlag, function(i, i_val) {
+                        if (cweFlag !== true) {
+                            cweFlag = getCweId(i_val);
+                        }
+                    });
 
                     if (x_val.data.platform.name !== "") {
                         result["Platform"] = x_val.data.platform.name;
@@ -628,6 +723,7 @@ const createPivotData = function(resultArray) {
 
                     DetectionMethod = y_val.confidences[0].detectionMethod;
                     result["DetectionMethod"] = DetectionMethod;
+                    result["ConfidenceScore"] = y_val.confidences[0].score;
                     if (pkgInfo !== undefined) {
                         if (pkgInfo.changelog !== undefined && pkgInfo.changelog.contents !== "") {
                             result["Changelog"] = "CHK-changelog-" + y_val.cveID + "," + x_val.scanTime + "," + x_val.data.serverName + "," + x_val.data.container.name + "," + pkgName;
@@ -721,32 +817,32 @@ const createPivotData = function(resultArray) {
 
                         if (y_val.cveContents[target].cvss3Score !== 0) {
                             result["CVSS Score"] = y_val.cveContents[target].cvss3Score.toFixed(1);
-                            result["CVSS Severity"] = getSeverityV3(y_val.cveContents[target].cvss3Score);
+                            result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss3Severity);
                             result["CVSS Score Type"] = target + "V3";
                         } else if (y_val.cveContents[target].cvss2Score !== 0) {
                             result["CVSS Score"] = y_val.cveContents[target].cvss2Score.toFixed(1);
-                            result["CVSS Severity"] = getSeverityV2(y_val.cveContents[target].cvss2Score);
+                            result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss2Severity);
                             result["CVSS Score Type"] = target;
                         }
 
                         if (cvssFlag !== "false") {
                             if (y_val.cveContents[target].cvss3Vector !== "") { //ex) CVE-2016-5483
                                 var arrayVector = getSplitArray(y_val.cveContents[target].cvss3Vector);
-                                let cvssv3 = getVectorV3.cvss(arrayVector[1]);
+                                let cvssv3 = getVectorV3.cvss(arrayVector[1], "");
                                 result["CVSSv3 (AV)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[2]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[2], "");
                                 result["CVSSv3 (AC)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[3]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[3], arrayVector[5]);
                                 result["CVSSv3 (PR)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[4]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[4], "");
                                 result["CVSSv3 (UI)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[5]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[5], "");
                                 result["CVSSv3 (S)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[6]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[6], "");
                                 result["CVSSv3 (C)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[7]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[7], "");
                                 result["CVSSv3 (I)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
-                                cvssv3 = getVectorV3.cvss(arrayVector[8]);
+                                cvssv3 = getVectorV3.cvss(arrayVector[8], "");
                                 result["CVSSv3 (A)"] = cvssv3[0] + "(" + cvssv3[1] + ")";
                             } else {
                                 result["CVSSv3 (AV)"] = "Unknown";
@@ -760,12 +856,18 @@ const createPivotData = function(resultArray) {
                             }
                             if (y_val.cveContents[target].cvss2Vector !== "") { //ex) CVE-2016-5483
                                 var arrayVector = getSplitArray(y_val.cveContents[target].cvss2Vector);
-                                result["CVSS (AV)"] = getVectorV2.cvss(arrayVector[0])[0];
-                                result["CVSS (AC)"] = getVectorV2.cvss(arrayVector[1])[0];
-                                result["CVSS (Au)"] = getVectorV2.cvss(arrayVector[2])[0];
-                                result["CVSS (C)"] = getVectorV2.cvss(arrayVector[3])[0];
-                                result["CVSS (I)"] = getVectorV2.cvss(arrayVector[4])[0];
-                                result["CVSS (A)"] = getVectorV2.cvss(arrayVector[5])[0];
+                                let cvssv2 = getVectorV2.cvss(arrayVector[0]);
+                                result["CVSS (AV)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
+                                cvssv2 = getVectorV2.cvss(arrayVector[1]);
+                                result["CVSS (AC)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
+                                cvssv2 = getVectorV2.cvss(arrayVector[2]);
+                                result["CVSS (Au)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
+                                cvssv2 = getVectorV2.cvss(arrayVector[3]);
+                                result["CVSS (C)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
+                                cvssv2 = getVectorV2.cvss(arrayVector[4]);
+                                result["CVSS (I)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
+                                cvssv2 = getVectorV2.cvss(arrayVector[5]);
+                                result["CVSS (A)"] = cvssv2[0] + "(" + cvssv2[1] + ")";
                             } else {
                                 result["CVSS (AV)"] = "Unknown";
                                 result["CVSS (AC)"] = "Unknown";
@@ -854,25 +956,9 @@ const getServerName = function(data) {
 
 const displayPivot = function(array) {
 
-    var url_param;
-    if (location.search !== "") {
-        try {
-            var decode_str = LZString.decompressFromEncodedURIComponent(location.search.substring(1).split('=')[1])
-            if (decode_str === null) {
-                showAlert("param decode error", decode_str);
-                return;
-            }
-            url_param = JSON.parse(decode_str);
-        } catch (e) {
-            showAlert("param parse error", e);
-            return;
-        }
-    }
-
     var url = window.location.href
     var new_url = url.replace(/\?.*$/, "");
     history.replaceState(null, null, new_url);
-
 
     var derivers = $.pivotUtilities.derivers;
     var renderers = $.extend($.pivotUtilities.renderers, $.pivotUtilities.c3_renderers);
@@ -899,26 +985,26 @@ const displayPivot = function(array) {
             }
         },
         sorters: {
-            "CVSS Severity": sortAs(["healthy", "Unknown", "Critical", "High", "Medium", "Low"]),
+            "CVSS Severity": sortAs(["healthy", "Unknown", "Critical", "High", "Important", "Medium", "Moderate", "Low"]),
             "CveID": sortAs(["healthy"]),
             "CweID": sortAs(["healthy"]),
             "Packages": sortAs(["healthy"]),
             "CVSS Score": function (a, b) { return -naturalSort(a, b); }, // sort backwards
             "Summary": sortAs(["healthy"]),
-            "CVSSv3 (AV)": sortAs(["healthy"]),
-            "CVSSv3 (AC)": sortAs(["healthy"]),
-            "CVSSv3 (PR)": sortAs(["healthy"]),
-            "CVSSv3 (UI)": sortAs(["healthy"]),
-            "CVSSv3 (S)": sortAs(["healthy"]),
-            "CVSSv3 (C)": sortAs(["healthy"]),
-            "CVSSv3 (I)": sortAs(["healthy"]),
-            "CVSSv3 (A)": sortAs(["healthy"]),
-            "CVSS (AV)": sortAs(["healthy"]),
-            "CVSS (AC)": sortAs(["healthy"]),
-            "CVSS (Au)": sortAs(["healthy"]),
-            "CVSS (C)": sortAs(["healthy"]),
-            "CVSS (I)": sortAs(["healthy"]),
-            "CVSS(I)": sortAs(["healthy"]),
+            "CVSSv3 (AV)": sortAs(["healthy", "NETWORK(0.85)", "ADJACENT_NETWORK(0.62)", "LOCAL(0.55)", "PHYSICAL(0.2)", "Unknown"]),
+            "CVSSv3 (AC)": sortAs(["healthy", "LOW(0.77)", "HIGH(0.44)", "Unknown"]),
+            "CVSSv3 (PR)": sortAs(["healthy", "NONE(0.85)", "LOW(0.68)", "LOW(0.62)", "HIGH(0.5)", "HIGH(0.27)", "Unknown"]),
+            "CVSSv3 (UI)": sortAs(["healthy", "NONE(0.85)", "REQUIRED(0.62)", "Unknown"]),
+            "CVSSv3 (S)": sortAs(["healthy", "CHANGED(0)", "UNCHANGED(0)", "Unknown"]),
+            "CVSSv3 (C)": sortAs(["healthy", "HIGH(0.56)", "LOW(0.22)", "NONE(0)", "Unknown"]),
+            "CVSSv3 (I)": sortAs(["healthy", "HIGH(0.56)", "LOW(0.22)", "NONE(0)", "Unknown"]),
+            "CVSSv3 (A)": sortAs(["healthy", "HIGH(0.56)", "LOW(0.22)", "NONE(0)", "Unknown"]),
+            "CVSS (AV)": sortAs(["healthy", "NETWORK(1)", "ADJACENT_NETWORK(0.646)", "LOCAL(0.395)", "Unknown"]),
+            "CVSS (AC)": sortAs(["healthy", "LOW(0.71)", "MEDIUM(0.61)", "HIGH(0.35)", "Unknown"]),
+            "CVSS (Au)": sortAs(["healthy", "NONE(0.704)", "SINGLE_INSTANCE(0.56)", "MULTIPLE_INSTANCES(0.45)", "Unknown"]),
+            "CVSS (C)": sortAs(["healthy", "COMPLETE(0.66)", "PARTIAL(0.275)", "NONE(0)", "Unknown"]),
+            "CVSS (I)": sortAs(["healthy", "COMPLETE(0.66)", "PARTIAL(0.275)", "NONE(0)", "Unknown"]),
+            "CVSS(I)": sortAs(["healthy", "COMPLETE(0.66)", "PARTIAL(0.275)", "NONE(0)", "Unknown"]),
             "CERT": function (a, b) { return -naturalSort(a, b); }, // sort backwards
             "PoC": function (a, b) { return -naturalSort(a, b); }, // sort backwards
             "Published": function (a, b) { return -naturalSort(a, b); }, // sort backwards
@@ -928,25 +1014,13 @@ const displayPivot = function(array) {
             db.set("vulsrepo_pivot_conf_tmp", config);
             $("#pivot_base").find(".pvtVal[data-value='null']").css("background-color", "#b2f3b2");
 
-            $("#pivot_base").find("th:contains('Critical')").each(function() {
-                if ($(this).text() === "Critical") {
-                    $(this).addClass("pvt-cvss-Critical");
-                }
-            });
-            $("#pivot_base").find("th:contains('High')").each(function() {
-                if ($(this).text() === "High") {
-                    $(this).addClass("pvt-cvss-High");
-                }
-            });
-            $("#pivot_base").find("th:contains('Medium')").each(function() {
-                if ($(this).text() === "Medium") {
-                    $(this).addClass("pvt-cvss-Medium");
-                }
-            });
-            $("#pivot_base").find("th:contains('Low')").each(function() {
-                if ($(this).text() === "Low") {
-                    $(this).addClass("pvt-cvss-Low");
-                }
+            let cvsss = ["Critical", "High", "Medium", "Low", "Important", "Moderate"];
+            $.each(cvsss, function(i, i_val) {
+                $("#pivot_base").find("th:contains('" + i_val + "')").each(function() {
+                    if ($(this).text() === i_val) {
+                        $(this).addClass("cvss-" + i_val);
+                    }
+                });
             });
 
             $("#pivot_base").find("th:contains('Unfixed')").each(function() {
@@ -974,14 +1048,9 @@ const displayPivot = function(array) {
     };
 
     var pivot_obj;
-    if (url_param != null) {
-        pivot_obj = url_param;
-        filterDisp.on("#label_pivot_conf");
-    } else {
-        pivot_obj = db.get("vulsrepo_pivot_conf_tmp");
-        if (pivot_obj === null) {
-            pivot_obj = db.get("vulsrepo_pivot_conf");
-        }
+    pivot_obj = db.get("vulsrepo_pivot_conf_tmp");
+    if (pivot_obj === null) {
+        pivot_obj = db.get("vulsrepo_pivot_conf");
     }
 
     if (pivot_obj != null) {
@@ -1162,44 +1231,55 @@ const displayDetail = function(cveID) {
     $("#modal-label").text(data.cveID);
 
     let dispCvss = function(target) {
+        let dest = target;
+        if (target === "redhat_api") {
+            dest = "redhat"
+        }
+
         if (data.cveContents[target] !== undefined) {
             scoreV2 = data.cveContents[target].cvss2Score;
             scoreV3 = data.cveContents[target].cvss3Score;
 
             if (scoreV2 !== 0) {
-                severityV2 = getSeverityV2(scoreV2);
+                severityV2 = toUpperFirstLetter(data.cveContents[target].cvss2Severity);
             }
             if (scoreV3 !== 0) {
-                severityV3 = getSeverityV3(scoreV3);
+                severityV3 = toUpperFirstLetter(data.cveContents[target].cvss3Severity);
             }
 
             if (scoreV2 !== 0) {
-                $("#scoreText_" + target).text(scoreV2.toFixed(1) + " (" + severityV2 + ")").addClass("cvss-" + severityV2);
+                $("#scoreText_" + dest).removeClass();
+                $("#scoreText_" + dest).text(scoreV2.toFixed(1) + " (" + severityV2 + ")").addClass("cvss-" + severityV2);
             } else {
-                $("#scoreText_" + target).text("None").addClass("cvss-None");
+                $("#scoreText_" + dest).removeClass();
+                $("#scoreText_" + dest).text("None").addClass("cvss-None");
             }
 
             if (scoreV3 !== 0) {
-                $("#scoreText_" + target + "V3").text(scoreV3.toFixed(1) + " (" + severityV3 + ")").addClass("cvss-" + severityV3);
+                $("#scoreText_" + dest + "V3").removeClass();
+                $("#scoreText_" + dest + "V3").text(scoreV3.toFixed(1) + " (" + severityV3 + ")").addClass("cvss-" + severityV3);
             } else {
-                $("#scoreText_" + target + "V3").text("None").addClass("cvss-None");
+                $("#scoreText_" + dest + "V3").removeClass();
+                $("#scoreText_" + dest + "V3").text("None").addClass("cvss-None");
             }
 
             if (target === "ubuntu" || target === "debian" || target === "debian_security_tracker" || target === "amazon") {
-                severity = data.cveContents[target].cvss2Severity;
-                $("#scoreText_" + target).removeClass();
-                $("#scoreText_" + target).text(severity).addClass("cvss-" + severity);
+                $("#scoreText_" + dest).removeClass();
+                $("#scoreText_" + dest).text(severityV2).addClass("cvss-" + severityV2);
             }
 
             if (data.cveContents[target].Summary !== "") {
-                $("#summary_" + target).append("<div>" + data.cveContents[target].summary + "<div>");
+                if ($("#summary_" + dest).text() === "NO DATA" || $("#summary_" + dest).text() === "") {
+                    $("#summary_" + dest).text("");
+                    $("#summary_" + dest).append("<div>" + data.cveContents[target].summary + "<div>");
+                }
             }
 
             if (data.cveContents[target].lastModified !== "0001-01-01T00:00:00Z") {
-                $("#lastModified_" + target).text(data.cveContents[target].lastModified.split("T")[0]);
+                $("#lastModified_" + dest).text(data.cveContents[target].lastModified.split("T")[0]);
             } else {
-                $("#lastModified_" + target).text("------");
-                $("#lastModified_" + target + "V3").text("------");
+                $("#lastModified_" + dest).text("------");
+                $("#lastModified_" + dest + "V3").text("------");
             }
 
             var resultV2 = [];
@@ -1216,23 +1296,23 @@ const displayDetail = function(cveID) {
             var resultV3 = [];
             if (data.cveContents[target].cvss3Vector !== "") {
                 var arrayVectorV3 = getSplitArray(data.cveContents[target].cvss3Vector);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[1])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[2])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[3])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[4])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[5])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[6])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[7])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[8])[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[1], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[2], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[3], arrayVectorV3[5])[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[4], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[5], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[6], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[7], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[8], "")[1]);
             }
 
         } else {
-            $("#scoreText_" + target).text("None").addClass("cvss-None");
-            $("#scoreText_" + target + "V3").text("None").addClass("cvss-None");
-            $("#summary_" + target).append("NO DATA");
-            $("#summary_" + target + "V3").append("NO DATA");
-            $("#lastModified_" + target).text("------");
-            $("#lastModified_" + target + "V3").text("------");
+            $("#scoreText_" + dest).text("None").addClass("cvss-None");
+            $("#scoreText_" + dest + "V3").text("None").addClass("cvss-None");
+            $("#summary_" + dest).text("NO DATA");
+            $("#summary_" + dest + "V3").text("NO DATA");
+            $("#lastModified_" + dest).text("------");
+            $("#lastModified_" + dest + "V3").text("------");
         }
 
         if (resultV2 === undefined) {
@@ -1265,6 +1345,7 @@ const displayDetail = function(cveID) {
                 radarData_jvn = r[0];
                 radarData_jvnV3 = r[1];
                 break;
+            case "redhat_api":
             case "redhat":
                 radarData_redhatV2 = r[0];
                 radarData_redhatV3 = r[1];
@@ -1385,9 +1466,9 @@ const displayDetail = function(cveID) {
 
     // --collapse
     // $("#summary_redhat").collapser('reInit');
-    $('#summary_redhat').collapser({
+    $('#summary_redhat > div').collapser({
         mode: 'words',
-        truncate: 50
+        truncate: 100
     });
 
     $('#summary_amazon > div').collapser({
@@ -1400,64 +1481,63 @@ const displayDetail = function(cveID) {
     let jvn = prioltyFlag.indexOf("jvn");
 
     // ---CweID---
-    if (data.cveContents.nvd !== undefined) {
-        if (data.cveContents.nvd.cweIDs) {
-            $("#CweID").append("<ul id='cwe-nvd'>");
-            $.each(data.cveContents.nvd.cweIDs, function(x, x_val) {
-                let cweid = x_val.split("-")[1];
-                if (data.cweDict[cweid] !== undefined) {
-                    $("#cwe-nvd").append("<li id='cweid-" + cweid + "'>");
-                    let name = "";
-                    if (nvd < jvn) {
-                        if (data.cweDict[cweid].en !== undefined) {
-                            name = data.cweDict[cweid].en.name;
-                        } else if (name === "" && data.cweDict[cweid].ja !== undefined) {
-                            name = data.cweDict[cweid].ja.name;
-                        }
-                    } else {
-                        if (data.cweDict[cweid].ja !== undefined) {
-                            name = data.cweDict[cweid].ja.name;
-                        } else  if (name === "" && data.cweDict[cweid].en !== undefined) {
-                            name = data.cweDict[cweid].en.name;
-                        }
-                    }
-                    $("#cweid-" + cweid).append(cweid + " [" + name + "]");
-                    $("#cweid-" + cweid).append(" (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
-                    $("#cweid-" + cweid).append("<span>&nbsp;/&nbsp;</span>");
-                    $("#cweid-" + cweid).append("<a href=\"" + detailLink.cwe_jvn.url + x_val + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)");
-                    if (data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
-                        // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
-                        $("#cweid-" + cweid).append(" <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>");
-                    }
-                    if (data.cweDict[cweid].owaspTopTen2017 !== "") {
-                        // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
-                        let owaspLink = "";
+    let getCweIDInfo = function(cveContents, target) {
+        if (cveContents[target] !== undefined) {
+            if (cveContents[target].cweIDs) {
+                $("#CweID").append("<div><strong>=== " + target + " ===</strong></div>");
+                $("#CweID").append("<ul id='cwe-" + target + "'>");
+                $.each(cveContents[target].cweIDs, function(x, x_val) {
+                    let cweid = x_val.split("-")[1];
+                    if (data.cweDict[cweid] !== undefined) {
+                        $("#cwe-" + target).append("<li id='cweid-" + cweid + "-" + target + "'>");
+                        let name = "";
                         if (nvd < jvn) {
-                            owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].en;
+                            if (data.cweDict[cweid].en !== undefined) {
+                                name = data.cweDict[cweid].en.name;
+                            } else if (name === "" && data.cweDict[cweid].ja !== undefined) {
+                                name = data.cweDict[cweid].ja.name;
+                            }
                         } else {
-                            owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].ja;
+                            if (data.cweDict[cweid].ja !== undefined) {
+                                name = data.cweDict[cweid].ja.name;
+                            } else  if (name === "" && data.cweDict[cweid].en !== undefined) {
+                                name = data.cweDict[cweid].en.name;
+                            }
                         }
-                        $("#cweid-" + cweid).append(" <a href=\"" + owaspLink + "\" rel='noopener noreferrer' target='_blank' class='badge count'>OWASP Rank: " + data.cweDict[cweid].owaspTopTen2017 +"</a>");
+                        $("#cweid-" + cweid + "-" + target).append(cweid + " [" + name + "]");
+                        $("#cweid-" + cweid + "-" + target).append(" (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
+                        $("#cweid-" + cweid + "-" + target).append("<span>&nbsp;/&nbsp;</span>");
+                        $("#cweid-" + cweid + "-" + target).append("<a href=\"" + detailLink.cwe_jvn.url + x_val + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)");
+                        if (data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
+                            // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
+                            $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>");
+                        }
+                        if (data.cweDict[cweid].owaspTopTen2017 !== "") {
+                            // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
+                            let owaspLink = "";
+                            if (nvd < jvn) {
+                                owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].en;
+                            } else {
+                                owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].ja;
+                            }
+                            $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + owaspLink + "\" rel='noopener noreferrer' target='_blank' class='badge count'>OWASP Rank: " + data.cweDict[cweid].owaspTopTen2017 +"</a>");
+                        }
+                        if (data.cweDict[cweid].sansTopTwentyfive !== "") {
+                            // SANS Top25 https://www.sans.org/top25-software-errors/
+                            $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + detailLink.sansTopTwentyfive.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>SANS Rank: " + data.cweDict[cweid].sansTopTwentyfive + "</a>");
+                        }
+                        $("#cwe-" + target).append("</li>");
                     }
-                    if (data.cweDict[cweid].sansTopTwentyfive !== "") {
-                        // SANS Top25 https://www.sans.org/top25-software-errors/
-                        $("#cweid-" + cweid).append(" <a href=\"" + detailLink.sansTopTwentyfive.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>SANS Rank: " + data.cweDict[cweid].sansTopTwentyfive + "</a>");
-                    }
-                    $("#cwe-nvd").append("</li>");
-                }
-            });
-            $("#CweID").append("</ul>");
+                });
+                $("#CweID").append("</ul>");
+            }
         }
-    }
+        return;
+    };
 
-    if (data.cveContents.redhat !== undefined) {
-        if (data.cveContents.redhat.cweIDs !== "") {
-            $("#CweID").append("<span>RedHat:[" + data.cveContents.redhat.cweIDs + "] (</span>");
-            $("#CweID").append("<a href=\"" + detailLink.cwe_nvd.url + data.cveContents.redhat.cweIDs[0].split("-")[1] + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
-            $("#CweID").append("<span>&nbsp;/&nbsp;</span>");
-            $("#CweID").append("<a href=\"" + detailLink.cwe_jvn.url + data.cveContents.redhat.cweIDs[0] + ".html\" rel='noopener noreferrer' target='_blank'>JVN)</a>");
-        }
-    }
+    getCweIDInfo(data.cveContents, "nvd");
+    getCweIDInfo(data.cveContents, "redhat");
+    getCweIDInfo(data.cveContents, "redhat_api");
 
     // ---Link---
     var addLink = function(target, url, disp) {
@@ -1537,7 +1617,12 @@ const displayDetail = function(cveID) {
         addCert("ja", "JPCERT");
         addCert("en", "USCERT");
     }
-    $("#count-cert").text(countCert);
+    if (countCert > 0) {
+        $("#count-cert").text(countCert);
+        $("#count-cert").show();
+    } else {
+        $("#count-cert").hide();
+    }
 
     // ---Exploits---
     let countExploit = 0;
@@ -1581,7 +1666,12 @@ const displayDetail = function(cveID) {
         mode: 'words',
         truncate: 50
     });
-    $("#count-exploit").text(countExploit);
+    if (countExploit > 0) {
+        $("#count-exploit").text(countExploit);
+        $("#count-exploit").show();
+    } else {
+        $("#count-exploit").hide();
+    }
 
     // ---References---
     let countRef = 0;
@@ -1610,6 +1700,15 @@ const displayDetail = function(cveID) {
     // ---Tab Package
     var pkgData = createDetailPackageData(cveID);
     packageTable.destroy();
+
+    packageTable.on( 'draw', function () {
+        $("#table-package").find("td:contains('Fixed')").removeClass("notfixyet-true").addClass("notfixyet-false");
+        $("#table-package").find("td:contains('Unfixed')").removeClass("notfixyet-false").addClass("notfixyet-true");
+
+        // ---package changelog event
+        addEventDisplayChangelog();
+    } );
+
     packageTable = $("#table-package")
         .DataTable({
             "data": pkgData,
@@ -1644,12 +1743,6 @@ const displayDetail = function(cveID) {
                 data: "NotFixedYet"
             }]
         });
-
-    $("#table-package").find("td:contains('Fixed')").removeClass("notfixyet-true").addClass("notfixyet-false");
-    $("#table-package").find("td:contains('Unfixed')").removeClass("notfixyet-false").addClass("notfixyet-true");
-
-    // ---package changelog event
-    addEventDisplayChangelog();
 
     $("#modal-detail").modal('show');
     setTimeout(function() { packageTable.columns.adjust(); }, 200);
