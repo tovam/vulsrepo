@@ -431,7 +431,7 @@ const setEvents = function() {
         db.set("vulsrepo_pivotPriority", vulsrepo.detailTaget);
     }
 
-    if (priority != null && priority.length !== 8) {
+    if (priority != null && priority.length !== 9) {
         db.set("vulsrepo_pivotPriority", vulsrepo.detailTaget);
     }
 
@@ -619,8 +619,12 @@ const createPivotData = function(resultArray) {
 
                     result["ServerName"] = getServerName(x_val.data);
 
-                    if (y_val.cveContents !== undefined && y_val.cveContents.nvd !== undefined) {
-                        let cweIds = y_val.cveContents.nvd.cweIDs;
+                    var getCweId = function(target) {
+                        if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined) {
+                            return false;
+                        }
+
+                        let cweIds = y_val.cveContents[target].cweIDs;
                         let cweIdStr = "";
                         if (cweIds !== undefined) {
                             // NVD-CWE-Other and NVD-CWE-noinfo
@@ -659,12 +663,17 @@ const createPivotData = function(resultArray) {
                                 }
                                 result["CweID"] = "CHK-cweid-" + cweIdStr;
                             }
-                        } else {
-                            result["CweID"] = "None";
                         }
-                    } else {
-                        result["CweID"] = "None";
-                    }
+                        return true;
+                    };
+
+                    var cweFlag = false;
+                    result["CweID"] = "None";
+                    $.each(prioltyFlag, function(i, i_val) {
+                        if (cweFlag !== true) {
+                            cweFlag = getCweId(i_val);
+                        }
+                    });
 
                     if (x_val.data.platform.name !== "") {
                         result["Platform"] = x_val.data.platform.name;
@@ -810,11 +819,11 @@ const createPivotData = function(resultArray) {
 
                         if (y_val.cveContents[target].cvss3Score !== 0) {
                             result["CVSS Score"] = y_val.cveContents[target].cvss3Score.toFixed(1);
-                            result["CVSS Severity"] = getSeverityV3(y_val.cveContents[target].cvss3Score);
+                            result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss3Severity);
                             result["CVSS Score Type"] = target + "V3";
                         } else if (y_val.cveContents[target].cvss2Score !== 0) {
                             result["CVSS Score"] = y_val.cveContents[target].cvss2Score.toFixed(1);
-                            result["CVSS Severity"] = getSeverityV2(y_val.cveContents[target].cvss2Score);
+                            result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss2Severity);
                             result["CVSS Score Type"] = target;
                         }
 
@@ -978,7 +987,7 @@ const displayPivot = function(array) {
             }
         },
         sorters: {
-            "CVSS Severity": sortAs(["healthy", "Unknown", "Critical", "High", "Medium", "Low"]),
+            "CVSS Severity": sortAs(["healthy", "Unknown", "Critical", "High", "Important", "Medium", "Moderate", "Low"]),
             "CveID": sortAs(["healthy"]),
             "CweID": sortAs(["healthy"]),
             "Packages": sortAs(["healthy"]),
@@ -1007,25 +1016,13 @@ const displayPivot = function(array) {
             db.set("vulsrepo_pivot_conf_tmp", config);
             $("#pivot_base").find(".pvtVal[data-value='null']").css("background-color", "#b2f3b2");
 
-            $("#pivot_base").find("th:contains('Critical')").each(function() {
-                if ($(this).text() === "Critical") {
-                    $(this).addClass("pvt-cvss-Critical");
-                }
-            });
-            $("#pivot_base").find("th:contains('High')").each(function() {
-                if ($(this).text() === "High") {
-                    $(this).addClass("pvt-cvss-High");
-                }
-            });
-            $("#pivot_base").find("th:contains('Medium')").each(function() {
-                if ($(this).text() === "Medium") {
-                    $(this).addClass("pvt-cvss-Medium");
-                }
-            });
-            $("#pivot_base").find("th:contains('Low')").each(function() {
-                if ($(this).text() === "Low") {
-                    $(this).addClass("pvt-cvss-Low");
-                }
+            let cvsss = ["Critical", "High", "Medium", "Low", "Important", "Moderate"];
+            $.each(cvsss, function(i, i_val) {
+                $("#pivot_base").find("th:contains('" + i_val + "')").each(function() {
+                    if ($(this).text() === i_val) {
+                        $(this).addClass("cvss-" + i_val);
+                    }
+                });
             });
 
             $("#pivot_base").find("th:contains('Unfixed')").each(function() {
@@ -1237,44 +1234,55 @@ const displayDetail = function(cveID) {
     $("#modal-label").text(data.cveID);
 
     let dispCvss = function(target) {
+        let dest = target;
+        if (target === "redhat_api") {
+            dest = "redhat"
+        }
+
         if (data.cveContents[target] !== undefined) {
             scoreV2 = data.cveContents[target].cvss2Score;
             scoreV3 = data.cveContents[target].cvss3Score;
 
             if (scoreV2 !== 0) {
-                severityV2 = getSeverityV2(scoreV2);
+                severityV2 = toUpperFirstLetter(data.cveContents[target].cvss2Severity);
             }
             if (scoreV3 !== 0) {
-                severityV3 = getSeverityV3(scoreV3);
+                severityV3 = toUpperFirstLetter(data.cveContents[target].cvss3Severity);
             }
 
             if (scoreV2 !== 0) {
-                $("#scoreText_" + target).text(scoreV2.toFixed(1) + " (" + severityV2 + ")").addClass("cvss-" + severityV2);
+                $("#scoreText_" + dest).removeClass();
+                $("#scoreText_" + dest).text(scoreV2.toFixed(1) + " (" + severityV2 + ")").addClass("cvss-" + severityV2);
             } else {
-                $("#scoreText_" + target).text("None").addClass("cvss-None");
+                $("#scoreText_" + dest).removeClass();
+                $("#scoreText_" + dest).text("None").addClass("cvss-None");
             }
 
             if (scoreV3 !== 0) {
-                $("#scoreText_" + target + "V3").text(scoreV3.toFixed(1) + " (" + severityV3 + ")").addClass("cvss-" + severityV3);
+                $("#scoreText_" + dest + "V3").removeClass();
+                $("#scoreText_" + dest + "V3").text(scoreV3.toFixed(1) + " (" + severityV3 + ")").addClass("cvss-" + severityV3);
             } else {
-                $("#scoreText_" + target + "V3").text("None").addClass("cvss-None");
+                $("#scoreText_" + dest + "V3").removeClass();
+                $("#scoreText_" + dest + "V3").text("None").addClass("cvss-None");
             }
 
             if (target === "ubuntu" || target === "debian" || target === "debian_security_tracker" || target === "amazon") {
-                severity = data.cveContents[target].cvss2Severity;
-                $("#scoreText_" + target).removeClass();
-                $("#scoreText_" + target).text(severity).addClass("cvss-" + severity);
+                $("#scoreText_" + dest).removeClass();
+                $("#scoreText_" + dest).text(severityV2).addClass("cvss-" + severityV2);
             }
 
             if (data.cveContents[target].Summary !== "") {
-                $("#summary_" + target).append("<div>" + data.cveContents[target].summary + "<div>");
+                if ($("#summary_" + dest).text() === "NO DATA" || $("#summary_" + dest).text() === "") {
+                    $("#summary_" + dest).text("");
+                    $("#summary_" + dest).append("<div>" + data.cveContents[target].summary + "<div>");
+                }
             }
 
             if (data.cveContents[target].lastModified !== "0001-01-01T00:00:00Z") {
-                $("#lastModified_" + target).text(data.cveContents[target].lastModified.split("T")[0]);
+                $("#lastModified_" + dest).text(data.cveContents[target].lastModified.split("T")[0]);
             } else {
-                $("#lastModified_" + target).text("------");
-                $("#lastModified_" + target + "V3").text("------");
+                $("#lastModified_" + dest).text("------");
+                $("#lastModified_" + dest + "V3").text("------");
             }
 
             var resultV2 = [];
@@ -1302,12 +1310,12 @@ const displayDetail = function(cveID) {
             }
 
         } else {
-            $("#scoreText_" + target).text("None").addClass("cvss-None");
-            $("#scoreText_" + target + "V3").text("None").addClass("cvss-None");
-            $("#summary_" + target).append("NO DATA");
-            $("#summary_" + target + "V3").append("NO DATA");
-            $("#lastModified_" + target).text("------");
-            $("#lastModified_" + target + "V3").text("------");
+            $("#scoreText_" + dest).text("None").addClass("cvss-None");
+            $("#scoreText_" + dest + "V3").text("None").addClass("cvss-None");
+            $("#summary_" + dest).text("NO DATA");
+            $("#summary_" + dest + "V3").text("NO DATA");
+            $("#lastModified_" + dest).text("------");
+            $("#lastModified_" + dest + "V3").text("------");
         }
 
         if (resultV2 === undefined) {
@@ -1340,6 +1348,7 @@ const displayDetail = function(cveID) {
                 radarData_jvn = r[0];
                 radarData_jvnV3 = r[1];
                 break;
+            case "redhat_api":
             case "redhat":
                 radarData_redhatV2 = r[0];
                 radarData_redhatV3 = r[1];
@@ -1460,9 +1469,9 @@ const displayDetail = function(cveID) {
 
     // --collapse
     // $("#summary_redhat").collapser('reInit');
-    $('#summary_redhat').collapser({
+    $('#summary_redhat > div').collapser({
         mode: 'words',
-        truncate: 50
+        truncate: 100
     });
 
     $('#summary_amazon > div').collapser({
@@ -1475,64 +1484,63 @@ const displayDetail = function(cveID) {
     let jvn = prioltyFlag.indexOf("jvn");
 
     // ---CweID---
-    if (data.cveContents.nvd !== undefined) {
-        if (data.cveContents.nvd.cweIDs) {
-            $("#CweID").append("<ul id='cwe-nvd'>");
-            $.each(data.cveContents.nvd.cweIDs, function(x, x_val) {
-                let cweid = x_val.split("-")[1];
-                if (data.cweDict[cweid] !== undefined) {
-                    $("#cwe-nvd").append("<li id='cweid-" + cweid + "'>");
-                    let name = "";
-                    if (nvd < jvn) {
-                        if (data.cweDict[cweid].en !== undefined) {
-                            name = data.cweDict[cweid].en.name;
-                        } else if (name === "" && data.cweDict[cweid].ja !== undefined) {
-                            name = data.cweDict[cweid].ja.name;
-                        }
-                    } else {
-                        if (data.cweDict[cweid].ja !== undefined) {
-                            name = data.cweDict[cweid].ja.name;
-                        } else  if (name === "" && data.cweDict[cweid].en !== undefined) {
-                            name = data.cweDict[cweid].en.name;
-                        }
-                    }
-                    $("#cweid-" + cweid).append(cweid + " [" + name + "]");
-                    $("#cweid-" + cweid).append(" (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
-                    $("#cweid-" + cweid).append("<span>&nbsp;/&nbsp;</span>");
-                    $("#cweid-" + cweid).append("<a href=\"" + detailLink.cwe_jvn.url + x_val + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)");
-                    if (data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
-                        // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
-                        $("#cweid-" + cweid).append(" <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>");
-                    }
-                    if (data.cweDict[cweid].owaspTopTen2017 !== "") {
-                        // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
-                        let owaspLink = "";
+    let getCweIDInfo = function(cveContents, target) {
+        if (cveContents[target] !== undefined) {
+            if (cveContents[target].cweIDs) {
+                $("#CweID").append("<div><strong>=== " + target + " ===</strong></div>");
+                $("#CweID").append("<ul id='cwe-" + target + "'>");
+                $.each(cveContents[target].cweIDs, function(x, x_val) {
+                    let cweid = x_val.split("-")[1];
+                    if (data.cweDict[cweid] !== undefined) {
+                        $("#cwe-" + target).append("<li id='cweid-" + cweid + "-" + target + "'>");
+                        let name = "";
                         if (nvd < jvn) {
-                            owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].en;
+                            if (data.cweDict[cweid].en !== undefined) {
+                                name = data.cweDict[cweid].en.name;
+                            } else if (name === "" && data.cweDict[cweid].ja !== undefined) {
+                                name = data.cweDict[cweid].ja.name;
+                            }
                         } else {
-                            owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].ja;
+                            if (data.cweDict[cweid].ja !== undefined) {
+                                name = data.cweDict[cweid].ja.name;
+                            } else  if (name === "" && data.cweDict[cweid].en !== undefined) {
+                                name = data.cweDict[cweid].en.name;
+                            }
                         }
-                        $("#cweid-" + cweid).append(" <a href=\"" + owaspLink + "\" rel='noopener noreferrer' target='_blank' class='badge count'>OWASP Rank: " + data.cweDict[cweid].owaspTopTen2017 +"</a>");
+                        $("#cweid-" + cweid + "-" + target).append(cweid + " [" + name + "]");
+                        $("#cweid-" + cweid + "-" + target).append(" (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
+                        $("#cweid-" + cweid + "-" + target).append("<span>&nbsp;/&nbsp;</span>");
+                        $("#cweid-" + cweid + "-" + target).append("<a href=\"" + detailLink.cwe_jvn.url + x_val + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)");
+                        if (data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
+                            // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
+                            $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>");
+                        }
+                        if (data.cweDict[cweid].owaspTopTen2017 !== "") {
+                            // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
+                            let owaspLink = "";
+                            if (nvd < jvn) {
+                                owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].en;
+                            } else {
+                                owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].ja;
+                            }
+                            $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + owaspLink + "\" rel='noopener noreferrer' target='_blank' class='badge count'>OWASP Rank: " + data.cweDict[cweid].owaspTopTen2017 +"</a>");
+                        }
+                        if (data.cweDict[cweid].sansTopTwentyfive !== "") {
+                            // SANS Top25 https://www.sans.org/top25-software-errors/
+                            $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + detailLink.sansTopTwentyfive.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>SANS Rank: " + data.cweDict[cweid].sansTopTwentyfive + "</a>");
+                        }
+                        $("#cwe-" + target).append("</li>");
                     }
-                    if (data.cweDict[cweid].sansTopTwentyfive !== "") {
-                        // SANS Top25 https://www.sans.org/top25-software-errors/
-                        $("#cweid-" + cweid).append(" <a href=\"" + detailLink.sansTopTwentyfive.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>SANS Rank: " + data.cweDict[cweid].sansTopTwentyfive + "</a>");
-                    }
-                    $("#cwe-nvd").append("</li>");
-                }
-            });
-            $("#CweID").append("</ul>");
+                });
+                $("#CweID").append("</ul>");
+            }
         }
-    }
+        return;
+    };
 
-    if (data.cveContents.redhat !== undefined) {
-        if (data.cveContents.redhat.cweIDs !== "") {
-            $("#CweID").append("<span>RedHat:[" + data.cveContents.redhat.cweIDs + "] (</span>");
-            $("#CweID").append("<a href=\"" + detailLink.cwe_nvd.url + data.cveContents.redhat.cweIDs[0].split("-")[1] + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
-            $("#CweID").append("<span>&nbsp;/&nbsp;</span>");
-            $("#CweID").append("<a href=\"" + detailLink.cwe_jvn.url + data.cveContents.redhat.cweIDs[0] + ".html\" rel='noopener noreferrer' target='_blank'>JVN)</a>");
-        }
-    }
+    getCweIDInfo(data.cveContents, "nvd");
+    getCweIDInfo(data.cveContents, "redhat");
+    getCweIDInfo(data.cveContents, "redhat_api");
 
     // ---Link---
     var addLink = function(target, url, disp) {
