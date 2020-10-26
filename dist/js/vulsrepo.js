@@ -557,6 +557,7 @@ const createPivotData = function(resultArray) {
                 "AdvisoryID": "healthy",
                 "CERT": "healthy",
                 "PoC": "healthy",
+                "Mitigation": "healthy",
                 "Changelog": "healthy",
                 "DetectionMethod": "healthy",
                 "ConfidenceScore": "healthy",
@@ -768,6 +769,13 @@ const createPivotData = function(resultArray) {
                         if (summaryFlag !== "false") {
                             result["Summary"] = y_val.cveContents[target].summary;
                         }
+
+                        if (y_val.cveContents[target].mitigation !== undefined && y_val.cveContents[target].mitigation !== "") {
+                            result["Mitigation"] = "Yes";
+                        } else {
+                            result["Mitigation"] = "";
+                        }
+
                         // yyyy-mm-dd
                         let getDateStr = function(datetime) {
                             var str = "";
