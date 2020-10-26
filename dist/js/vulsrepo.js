@@ -557,6 +557,7 @@ const createPivotData = function(resultArray) {
                 "AdvisoryID": "healthy",
                 "CERT": "healthy",
                 "PoC": "healthy",
+                "Mitigation": "healthy",
                 "Changelog": "healthy",
                 "DetectionMethod": "healthy",
                 "ConfidenceScore": "healthy",
@@ -768,6 +769,7 @@ const createPivotData = function(resultArray) {
                         if (summaryFlag !== "false") {
                             result["Summary"] = y_val.cveContents[target].summary;
                         }
+
                         // yyyy-mm-dd
                         let getDateStr = function(datetime) {
                             var str = "";
@@ -805,6 +807,26 @@ const createPivotData = function(resultArray) {
                         result["Summary"] = "Unknown";
                         result["Published"] = "Unknown";
                         result["Last Modified"] = "Unknown";
+                    }
+
+                    var getMitigation = function(target) {
+                        if (y_val.cveContents[target] === undefined || y_val.cveContents[target].mitigation === undefined || y_val.cveContents[target].mitigation === "") {
+                            return false;
+                        }
+
+                        result["Mitigation"] = "Yes";
+                        return true;
+                    };
+
+                    var mitigationFlag = false;
+                    $.each(prioltyFlag, function(i, i_val) {
+                        if (mitigationFlag !== true) {
+                            mitigationFlag = getMitigation(i_val);
+                        }
+                    });
+
+                    if (mitigationFlag === false) {
+                        result["Mitigation"] = "";
                     }
 
                     let getCvss = function(target) {
@@ -1223,7 +1245,8 @@ const initDetail = function() {
     $("#modal-label").text("");
     $("#count-cert").text("0");
     $("#count-References").text("0");
-    $("#CweID,#Link,#cert,#exploit,#References").empty();
+    $("#CweID,#Mitigation,#Link,#cert,#exploit,#References").empty();
+    $("#Mitigation-section").hide();
 
     $.each(vulsrepo.detailTaget, function(i, i_val) {
         $("#typeName_" + i_val).empty();
@@ -1284,7 +1307,7 @@ const displayDetail = function(cveID) {
             if (data.cveContents[target].Summary !== "") {
                 if ($("#summary_" + dest).text() === "NO DATA" || $("#summary_" + dest).text() === "") {
                     $("#summary_" + dest).text("");
-                    $("#summary_" + dest).append("<div>" + data.cveContents[target].summary + "<div>");
+                    $("#summary_" + dest).append("<div>" + data.cveContents[target].summary + "</div>");
                 }
             }
 
@@ -1293,6 +1316,13 @@ const displayDetail = function(cveID) {
             } else {
                 $("#lastModified_" + dest).text("------");
                 $("#lastModified_" + dest + "V3").text("------");
+            }
+
+            // ---Mitigation---
+            if (data.cveContents[target].mitigation !== undefined && data.cveContents[target].mitigation !== "") {
+                $("#Mitigation").append("<div><strong>=== " + target + " ===</strong></div>");
+                $("#Mitigation").append("<pre>" + data.cveContents[target].mitigation + "</pre>");
+                $("#Mitigation-section").show();
             }
 
             var resultV2 = [];
