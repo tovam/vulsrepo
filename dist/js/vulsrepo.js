@@ -1247,6 +1247,8 @@ const initDetail = function() {
     $("#count-References").text("0");
     $("#CweID,#Mitigation,#Link,#cert,#exploit,#References").empty();
     $("#Mitigation-section").hide();
+    $("#cert-section").hide();
+    $("#exploit-section").hide();
 
     $.each(vulsrepo.detailTaget, function(i, i_val) {
         $("#typeName_" + i_val).empty();
@@ -1662,9 +1664,7 @@ const displayDetail = function(cveID) {
     }
     if (countCert > 0) {
         $("#count-cert").text(countCert);
-        $("#count-cert").show();
-    } else {
-        $("#count-cert").hide();
+        $("#cert-section").show();
     }
 
     // ---Exploits---
@@ -1711,9 +1711,7 @@ const displayDetail = function(cveID) {
     });
     if (countExploit > 0) {
         $("#count-exploit").text(countExploit);
-        $("#count-exploit").show();
-    } else {
-        $("#count-exploit").hide();
+        $("#exploit-section").show();
     }
 
     // ---References---
