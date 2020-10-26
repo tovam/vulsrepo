@@ -977,6 +977,19 @@ const displayPivot = function(array) {
         aggregatorName: "Count",
         rendererName: "Heatmap",
         rendererOptions: {
+            c3: {
+                data: {
+                    colors: {
+                        Unknown: "#666666",
+                        Critical: "#cb4829",
+                        High: "#d59533",
+                        Important: "#d59533",
+                        Medium: "#dfd238",
+                        Moderate: "#dfd238",
+                        Low: "#93b447"
+                    }
+                }
+            },
             heatmap: {
                 colorScaleGenerator: function(values) {
                     return d3.scale.sqrt()
@@ -1063,7 +1076,6 @@ const displayPivot = function(array) {
         pivot_attr["rendererName"] = pivot_obj["rendererName"];
         pivot_attr["rowOrder"] = pivot_obj["rowOrder"];
         pivot_attr["colOrder"] = pivot_obj["colOrder"];
-        pivot_attr["rendererOptions"] = pivot_obj["rendererOptions"];
     } else {
         filterDisp.off("#label_pivot_conf");
     }
