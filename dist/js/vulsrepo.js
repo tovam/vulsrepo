@@ -1268,6 +1268,8 @@ const displayDetail = function(cveID) {
     // ---CVSS Detail
     $("#modal-label").text(data.cveID);
 
+    let countMitigation = 0;
+
     let dispCvss = function(target) {
         let dest = target;
         if (target === "redhat_api") {
@@ -1322,8 +1324,10 @@ const displayDetail = function(cveID) {
 
             // ---Mitigation---
             if (data.cveContents[target].mitigation !== undefined && data.cveContents[target].mitigation !== "") {
+                countMitigation++;
                 $("#Mitigation").append("<div><strong>=== " + target + " ===</strong></div>");
                 $("#Mitigation").append("<pre>" + data.cveContents[target].mitigation + "</pre>");
+                $("#count-mitigation").text(countMitigation);
                 $("#Mitigation-section").show();
             }
 
