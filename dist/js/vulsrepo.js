@@ -810,7 +810,7 @@ const createPivotData = function(resultArray) {
                     }
 
                     var getMitigation = function(target) {
-                        if (y_val.cveContents[target] === undefined || y_val.cveContents[target].mitigation === undefined || y_val.cveContents[target].mitigation === "") {
+                        if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined || y_val.cveContents[target].mitigation === undefined || y_val.cveContents[target].mitigation === "") {
                             return false;
                         }
 
