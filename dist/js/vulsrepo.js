@@ -1334,25 +1334,25 @@ const displayDetail = function(cveID) {
             var resultV2 = [];
             if (data.cveContents[target].cvss2Vector !== "") {
                 var arrayVectorV2 = getSplitArray(data.cveContents[target].cvss2Vector);
-                resultV2.push(getVectorV2.cvss(arrayVectorV2[0])[1]);
-                resultV2.push(getVectorV2.cvss(arrayVectorV2[1])[1]);
-                resultV2.push(getVectorV2.cvss(arrayVectorV2[2])[1]);
-                resultV2.push(getVectorV2.cvss(arrayVectorV2[3])[1]);
-                resultV2.push(getVectorV2.cvss(arrayVectorV2[4])[1]);
-                resultV2.push(getVectorV2.cvss(arrayVectorV2[5])[1]);
+                resultV2.push(getVectorV2.cvss(arrayVectorV2[0])[1] / 1);
+                resultV2.push(getVectorV2.cvss(arrayVectorV2[1])[1] / 0.71);
+                resultV2.push(getVectorV2.cvss(arrayVectorV2[2])[1] / 0.704);
+                resultV2.push(getVectorV2.cvss(arrayVectorV2[3])[1] / 0.66);
+                resultV2.push(getVectorV2.cvss(arrayVectorV2[4])[1] / 0.66);
+                resultV2.push(getVectorV2.cvss(arrayVectorV2[5])[1] / 0.66);
             }
 
             var resultV3 = [];
             if (data.cveContents[target].cvss3Vector !== "") {
                 var arrayVectorV3 = getSplitArray(data.cveContents[target].cvss3Vector);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[1], "")[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[2], "")[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[3], arrayVectorV3[5])[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[4], "")[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[5], "")[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[6], "")[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[7], "")[1]);
-                resultV3.push(getVectorV3.cvss(arrayVectorV3[8], "")[1]);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[1], "")[1] / 0.85);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[2], "")[1] / 0.77);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[3], arrayVectorV3[5])[1] / 0.85);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[4], "")[1] / 0.85);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[5], "")[1] / 1);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[6], "")[1] / 0.56);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[7], "")[1] / 0.56);
+                resultV3.push(getVectorV3.cvss(arrayVectorV3[8], "")[1] / 0.56);
             }
 
         } else {
