@@ -178,7 +178,7 @@ const getVectorV3 = {
                         return Array("UNCHANGED", 0);
                         break;
                     case 'C':
-                        return Array("CHANGED", 0);
+                        return Array("CHANGED", 1);
                         break;
                 }
             case 'C':
