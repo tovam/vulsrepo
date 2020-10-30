@@ -39,6 +39,6 @@ https://github.com/ishiDACo/vulsrepo/issues
 
 ![image](https://raw.githubusercontent.com/ishiDACo/vulsrepo/master/gallery/image001.png)
 ![image](https://raw.githubusercontent.com/ishiDACo/vulsrepo/master/gallery/image002.png)
-![image](https://raw.githubusercontent.com/ishiDACo/vulsrepo/master/gallery/image003.png)
-![image](https://raw.githubusercontent.com/ishiDACo/vulsrepo/master/gallery/image004.png)
-![image](https://raw.githubusercontent.com/ishiDACo/vulsrepo/master/gallery/image005.png)
+![image](https://raw.githubusercontent.com/ishiDACo/vulsrepo/master/gallery/filter-03.png)
+![image](https://raw.githubusercontent.com/ishiDACo/vulsrepo/master/gallery/detail-main.png)
+![image](https://raw.githubusercontent.com/ishiDACo/vulsrepo/master/gallery/changelog.png)
