@@ -1162,8 +1162,10 @@ const addAdvisoryIDLink = function() {
             $(this).text("").append("<a href=\"" + detailLink.amazon.url + "AL2/" + advisoryid.replace("ALAS2-", "ALAS-") + ".html\" rel='noopener noreferrer' target='_blank'>" + advisoryid + '</a>');
         } else if (advisoryid.indexOf('ALAS-') != -1) {
             // TODO ALAS
+        } else if (advisoryid.indexOf('RHSA-') != -1) {
+            // RHSA
+            $(this).text("").append("<a href=\"" + detailLink.rhn.url + advisoryid + ".html\" rel='noopener noreferrer' target='_blank'>" + advisoryid + '</a>');
         }
-        // TODO RHSA
         // TODO ELSA
         // TODO OVMSA
     });
