@@ -755,7 +755,7 @@ const createPivotData = function(resultArray) {
                             result["Changelog"] = "None";
                         }
 
-                        if (pkgInfo.Version !== "") {
+                        if (pkgInfo.version !== "") {
                             if (pkgInfo.release !== "") {
                                 result["PackageVer"] = pkgInfo.version + "-" + pkgInfo.release;
                             } else {
@@ -765,7 +765,7 @@ const createPivotData = function(resultArray) {
                             result["PackageVer"] = "None";
                         }
 
-                        if (pkgInfo.NewVersion !== "") {
+                        if (pkgInfo.newVersion !== "") {
                             if (pkgInfo.newRelease !== "") {
                                 result["NewPackageVer"] = pkgInfo.newVersion + "-" + pkgInfo.newRelease;
                             } else {
@@ -1317,31 +1317,39 @@ const displayDetail = function(cveID) {
             severityV2 = toUpperFirstLetter(data.cveContents[target].cvss2Severity);
             severityV3 = toUpperFirstLetter(data.cveContents[target].cvss3Severity);
 
-            if (scoreV2 !== 0) {
-                $("#scoreText_" + dest).removeClass();
-                $("#scoreText_" + dest).text(scoreV2.toFixed(1) + " (" + severityV2 + ")").addClass("cvss-" + severityV2);
-            } else {
-                $("#scoreText_" + dest).removeClass();
-                $("#scoreText_" + dest).text("None").addClass("cvss-None");
-            }
-
-            if (scoreV3 !== 0) {
-                $("#scoreText_" + dest + "V3").removeClass();
-                $("#scoreText_" + dest + "V3").text(scoreV3.toFixed(1) + " (" + severityV3 + ")").addClass("cvss-" + severityV3);
-            } else {
-                $("#scoreText_" + dest + "V3").removeClass();
-                $("#scoreText_" + dest + "V3").text("None").addClass("cvss-None");
-            }
-
             if (target === "ubuntu" || target === "debian" || target === "debian_security_tracker" || target === "amazon") {
                 $("#scoreText_" + dest).removeClass();
                 $("#scoreText_" + dest).text(severityV2).addClass("cvss-" + severityV2);
+            } else if (target === "trivy") {
+                $("#scoreText_" + dest).removeClass();
+                $("#scoreText_" + dest).text(severityV3).addClass("cvss-" + severityV3);
+            } else {
+                if (scoreV2 !== 0) {
+                    $("#scoreText_" + dest).removeClass();
+                    $("#scoreText_" + dest).text(scoreV2.toFixed(1) + " (" + severityV2 + ")").addClass("cvss-" + severityV2);
+                } else {
+                    $("#scoreText_" + dest).removeClass();
+                    $("#scoreText_" + dest).text("None").addClass("cvss-None");
+                }
+
+                if (scoreV3 !== 0) {
+                    $("#scoreText_" + dest + "V3").removeClass();
+                    $("#scoreText_" + dest + "V3").text(scoreV3.toFixed(1) + " (" + severityV3 + ")").addClass("cvss-" + severityV3);
+                } else {
+                    $("#scoreText_" + dest + "V3").removeClass();
+                    $("#scoreText_" + dest + "V3").text("None").addClass("cvss-None");
+                }
             }
 
-            if (data.cveContents[target].Summary !== "") {
+            if (data.cveContents[target].summary !== "") {
                 if ($("#summary_" + dest).text() === "NO DATA" || $("#summary_" + dest).text() === "") {
                     $("#summary_" + dest).text("");
                     $("#summary_" + dest).append("<div>" + data.cveContents[target].summary + "</div>");
+                }
+            } else if (data.cveContents[target].title !== "") {
+                if ($("#summary_" + dest).text() === "NO DATA" || $("#summary_" + dest).text() === "") {
+                    $("#summary_" + dest).text("");
+                    $("#summary_" + dest).append("<div>" + data.cveContents[target].title + "</div>");
                 }
             }
 
@@ -1555,6 +1563,11 @@ const displayDetail = function(cveID) {
         truncate: 50
     });
 
+    $('#summary_trivy > div').collapser({
+        mode: 'words',
+        truncate: 50
+    });
+
     const prioltyFlag = db.get("vulsrepo_pivotPriority");
     let nvd = prioltyFlag.indexOf("nvd");
     let jvn = prioltyFlag.indexOf("jvn");
@@ -1667,6 +1680,7 @@ const displayDetail = function(cveID) {
     } else {
         $("#typeName_amazon").append("Amazon");
     }
+    $("#typeName_trivy").append("Trivy");
 
     // ---USCERT/JPCERT---
     let countCert = 0;
