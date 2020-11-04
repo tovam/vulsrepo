@@ -777,9 +777,7 @@ const createPivotData = function(resultArray) {
                             return false;
                         }
 
-                        if (summaryFlag !== "false") {
-                            result["Title"] = y_val.cveContents[target].title;
-                        }
+                        result["Title"] = y_val.cveContents[target].title;
 
                         if (summaryFlag !== "false") {
                             result["Summary"] = y_val.cveContents[target].summary;
