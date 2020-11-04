@@ -430,7 +430,7 @@ const setEvents = function() {
         db.set("vulsrepo_pivotPriority", vulsrepo.detailTaget);
     }
 
-    if (priority != null && priority.length !== 9) {
+    if (priority != null && priority.length !== 10) {
         db.set("vulsrepo_pivotPriority", vulsrepo.detailTaget);
     }
 
@@ -530,6 +530,7 @@ const createPivotData = function(resultArray) {
                 "Release": x_val.data.release,
                 "CveID": "healthy",
                 "Packages": "healthy",
+                "Path": "healthy",
                 "FixedIn": "healthy",
                 "FixState": "healthy",
                 "NotFixedYet": "healthy",
@@ -537,6 +538,7 @@ const createPivotData = function(resultArray) {
                 "NewPackageVer": "healthy",
                 "Repository": "healthy",
                 "CweID": "healthy",
+                "Title": "healthy",
                 "Summary": "healthy",
                 "CVSS Score": "healthy",
                 "CVSS Severity": "healthy",
@@ -586,12 +588,15 @@ const createPivotData = function(resultArray) {
                     targetNames = y_val.cpeNames;
                 } else if(isCheckNull(y_val.cpeURIs) === false) {
                     targetNames = y_val.cpeURIs;
-                } else {
+                } else if(isCheckNull(y_val.affectedPackages) === false) {
                     targetNames = y_val.affectedPackages;
+                } else if(isCheckNull(y_val.libraryFixedIns) === false) {
+                    targetNames = y_val.libraryFixedIns;
                 }
 
                 cveid_count = cveid_count + 1
                 $.each(targetNames, function(p, p_val) {
+                    let libPath;
                     if (p_val.name === undefined) {
                         pkgName = p_val;
                         NotFixedYet = "Unknown";
@@ -602,9 +607,25 @@ const createPivotData = function(resultArray) {
                         NotFixedYet = isNotFixedYet(p_val);
                         fixedIn = getFixedIn(p_val);
                         fixState = getFixState(p_val);
+                        libPath = p_val.path;
                     }
 
-                    let pkgInfo = x_val.data.packages[pkgName];
+                    let pkgInfo;
+                    let libInfo;
+                    if (libPath === undefined) {
+                        libPath = "";
+                        pkgInfo = x_val.data.packages[pkgName];
+                    } else {
+                        $.each(x_val.data.libraries, function(l, l_val) {
+                            if (l_val.Path === libPath) {
+                                $.each(l_val.Libs, function(n, n_val) {
+                                    if (n_val.Name === pkgName) {
+                                        libInfo = n_val;
+                                    }
+                                });
+                            }
+                        });
+                    }
 
                     let result = {
                         "ScanTime": x_val.scanTime,
@@ -612,6 +633,7 @@ const createPivotData = function(resultArray) {
                         "Release": x_val.data.release,
                         "CveID": "CHK-cveid-" + y_val.cveID,
                         "Packages": pkgName,
+                        "Path": libPath,
                         "NotFixedYet": NotFixedYet,
                         "FixedIn": fixedIn,
                         "FixState": fixState
@@ -753,6 +775,12 @@ const createPivotData = function(resultArray) {
                             result["NewPackageVer"] = "None";
                         }
                         result["Repository"] = pkgInfo.repository;
+                    } else if (libInfo !== undefined) {
+                        // === for library
+                        result["PackageVer"] = libInfo.Version;
+                        result["NewPackageVer"] = "Unknown";
+                        result["Changelog"] = "None";
+                        result["Repository"] = ""
                     } else {
                         // ===for cpe
                         result["PackageVer"] = "Unknown";
@@ -764,6 +792,10 @@ const createPivotData = function(resultArray) {
                     var getSummaryAndDate = function(target) {
                         if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined) {
                             return false;
+                        }
+
+                        if (summaryFlag !== "false") {
+                            result["Title"] = y_val.cveContents[target].title;
                         }
 
                         if (summaryFlag !== "false") {
