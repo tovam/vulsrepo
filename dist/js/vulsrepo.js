@@ -583,16 +583,7 @@ const createPivotData = function(resultArray) {
             array.push(result);
         } else {
             $.each(x_val.data.scannedCves, function(y, y_val) {
-                let targetNames;
-                if (isCheckNull(y_val.cpeNames) === false) {
-                    targetNames = y_val.cpeNames;
-                } else if(isCheckNull(y_val.cpeURIs) === false) {
-                    targetNames = y_val.cpeURIs;
-                } else if(isCheckNull(y_val.affectedPackages) === false) {
-                    targetNames = y_val.affectedPackages;
-                } else if(isCheckNull(y_val.libraryFixedIns) === false) {
-                    targetNames = y_val.libraryFixedIns;
-                }
+                let targetNames = getTargetPackages(y_val);
 
                 cveid_count = cveid_count + 1
                 $.each(targetNames, function(p, p_val) {
@@ -616,15 +607,7 @@ const createPivotData = function(resultArray) {
                         libPath = "";
                         pkgInfo = x_val.data.packages[pkgName];
                     } else {
-                        $.each(x_val.data.libraries, function(l, l_val) {
-                            if (l_val.Path === libPath) {
-                                $.each(l_val.Libs, function(n, n_val) {
-                                    if (n_val.Name === pkgName) {
-                                        libInfo = n_val;
-                                    }
-                                });
-                            }
-                        });
+                        libInfo = getLibraryInformation(x_val.data.libraries, pkgName, libPath);
                     }
 
                     let result = {
@@ -1813,6 +1796,8 @@ const displayDetail = function(cveID) {
             }, {
                 data: "ContainerName"
             }, {
+                data: "Path"
+            }, {
                 data: "PackageName"
             }, {
                 data: "PackageVersion"
@@ -1896,20 +1881,51 @@ const addEventDisplayChangelog = function() {
     });
 }
 
+const getTargetPackages = function(scannedCve) {
+    let targets;
+
+    if (isCheckNull(scannedCve.cpeNames) === false) {
+        targets = scannedCve.cpeNames;
+    } else if(isCheckNull(scannedCve.cpeURIs) === false) {
+        targets = scannedCve.cpeURIs;
+    } else if(isCheckNull(scannedCve.affectedPackages) === false) {
+        targets = scannedCve.affectedPackages;
+    } else if(isCheckNull(scannedCve.libraryFixedIns) === false) {
+        targets = scannedCve.libraryFixedIns;
+    }
+
+    return targets;
+};
+
+const getLibraryInformation = function(libraries, pkgName, libPath) {
+    let libInfo;
+
+    if (libPath === undefined) {
+        return;
+    }
+
+    $.each(libraries, function(l, l_val) {
+        if (l_val.Path === libPath) {
+            $.each(l_val.Libs, function(n, n_val) {
+                if (n_val.Name === pkgName) {
+                    libInfo = n_val;
+                }
+            });
+        }
+    });
+
+    return libInfo;
+};
+
 const createDetailPackageData = function(cveID) {
     var array = [];
     $.each(vulsrepo.detailRawData, function(x, x_val) {
         $.each(x_val.data.scannedCves, function(y, y_val) {
             if (cveID === y_val.cveID) {
-                if (isCheckNull(y_val.cpeNames) === false) {
-                    targets = y_val.cpeNames;
-                } else if(isCheckNull(y_val.cpeURIs) === false) {
-                    targets = y_val.cpeURIs;
-                } else {
-                    targets = y_val.affectedPackages;
-                }
+                let targets = getTargetPackages(y_val);
 
                 $.each(targets, function(z, z_val) {
+                    let libPath;
                     if (z_val.name === undefined) {
                         pkgName = z_val;
                         NotFixedYet = "None";
@@ -1918,7 +1934,10 @@ const createDetailPackageData = function(cveID) {
                         NotFixedYet = isNotFixedYet(z_val);
                         fixedIn = getFixedIn(z_val);
                         fixState = getFixState(z_val);
+                        libPath = z_val.path;
                     }
+
+                    let libInfo =  getLibraryInformation(x_val.data.libraries, pkgName, libPath);
 
                     let tmp_Map = {
                         ScanTime: x_val.scanTime,
@@ -1927,6 +1946,7 @@ const createDetailPackageData = function(cveID) {
                     };
 
                     if (pkgName.indexOf('cpe:/') != -1) {
+                        tmp_Map["Path"] = "";
                         tmp_Map["PackageName"] = '<a href="#contents" class="lightbox" data-cveid="' + cveID + '" data-scantime="' + x_val.scanTime + '" data-server="' + x_val.data.serverName + '" data-container="' + x_val.data.container.name + '" data-package="' + pkgName + '">' + pkgName + '</a>';
                         tmp_Map["PackageVersion"] = "";
                         tmp_Map["PackageRelease"] = "";
@@ -1937,12 +1957,24 @@ const createDetailPackageData = function(cveID) {
                         tmp_Map["FixedIn"] = "";
                         tmp_Map["FixState"] = "";
                     } else if (x_val.data.packages[pkgName] !== undefined) {
+                        tmp_Map["Path"] = "";
                         tmp_Map["PackageName"] = '<a href="#contents" class="lightbox" data-cveid="' + cveID + '" data-scantime="' + x_val.scanTime + '" data-server="' + x_val.data.serverName + '" data-container="' + x_val.data.container.name + '" data-package="' + pkgName + '">' + pkgName + '</a>';
                         tmp_Map["PackageVersion"] = x_val.data.packages[pkgName].version;
                         tmp_Map["PackageRelease"] = x_val.data.packages[pkgName].release;
                         tmp_Map["PackageNewVersion"] = x_val.data.packages[pkgName].newVersion;
                         tmp_Map["PackageNewRelease"] = x_val.data.packages[pkgName].newRelease;
                         tmp_Map["Repository"] = x_val.data.packages[pkgName].repository;
+                        tmp_Map["NotFixedYet"] = NotFixedYet;
+                        tmp_Map["FixedIn"] = fixedIn;
+                        tmp_Map["FixState"] = fixState;
+                    } else if (libInfo !== undefined) {
+                        tmp_Map["Path"] = libPath;
+                        tmp_Map["PackageName"] = '<a href="#contents" class="lightbox" data-cveid="' + cveID + '" data-scantime="' + x_val.scanTime + '" data-server="' + x_val.data.serverName + '" data-container="' + x_val.data.container.name + '" data-package="' + pkgName + '">' + pkgName + '</a>';
+                        tmp_Map["PackageVersion"] = libInfo.Version;
+                        tmp_Map["PackageRelease"] = "";
+                        tmp_Map["PackageNewVersion"] = "";
+                        tmp_Map["PackageNewRelease"] = "";
+                        tmp_Map["Repository"] = "";
                         tmp_Map["NotFixedYet"] = NotFixedYet;
                         tmp_Map["FixedIn"] = fixedIn;
                         tmp_Map["FixState"] = fixState;
