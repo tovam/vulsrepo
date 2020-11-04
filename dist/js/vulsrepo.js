@@ -1282,12 +1282,8 @@ const displayDetail = function(cveID) {
             scoreV2 = data.cveContents[target].cvss2Score;
             scoreV3 = data.cveContents[target].cvss3Score;
 
-            if (scoreV2 !== 0) {
-                severityV2 = toUpperFirstLetter(data.cveContents[target].cvss2Severity);
-            }
-            if (scoreV3 !== 0) {
-                severityV3 = toUpperFirstLetter(data.cveContents[target].cvss3Severity);
-            }
+            severityV2 = toUpperFirstLetter(data.cveContents[target].cvss2Severity);
+            severityV3 = toUpperFirstLetter(data.cveContents[target].cvss3Severity);
 
             if (scoreV2 !== 0) {
                 $("#scoreText_" + dest).removeClass();
