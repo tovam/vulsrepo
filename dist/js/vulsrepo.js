@@ -1291,6 +1291,8 @@ const displayDetail = function(cveID) {
             dest = "redhat"
         }
 
+        var cvss3Ver = "";
+
         if (data.cveContents[target] !== undefined) {
             scoreV2 = data.cveContents[target].cvss2Score;
             scoreV3 = data.cveContents[target].cvss3Score;
@@ -1364,6 +1366,7 @@ const displayDetail = function(cveID) {
             var resultV3 = [];
             if (data.cveContents[target].cvss3Vector !== "") {
                 var arrayVectorV3 = getSplitArray(data.cveContents[target].cvss3Vector);
+                cvss3Ver = "v" + arrayVectorV3[0].split(":")[1];
                 resultV3.push(getVectorV3.cvss(arrayVectorV3[1], "")[1] / 0.85);
                 resultV3.push(getVectorV3.cvss(arrayVectorV3[2], "")[1] / 0.77);
                 resultV3.push(getVectorV3.cvss(arrayVectorV3[3], arrayVectorV3[5])[1] / 0.85);
@@ -1384,14 +1387,14 @@ const displayDetail = function(cveID) {
         }
 
         if (resultV2 === undefined) {
-            resultV2 = [0, 0, 0, 0, 0, 0];
+            resultV2 = [];
         }
 
         if (resultV3 === undefined) {
-            resultV3 = [0, 0, 0, 0, 0, 0, 0, 0];
+            resultV3 = [];
         }
 
-        return [resultV2, resultV3];
+        return [resultV2, resultV3, cvss3Ver];
     }
 
     // ---ChartRadar
@@ -1408,15 +1411,18 @@ const displayDetail = function(cveID) {
             case "nvd":
                 radarData_nvd = r[0];
                 radarData_nvdV3 = r[1];
+                radarData_nvdV3Ver = r[2];
                 break;
             case "jvn":
                 radarData_jvn = r[0];
                 radarData_jvnV3 = r[1];
+                radarData_jvnV3Ver = r[2];
                 break;
             case "redhat_api":
             case "redhat":
                 radarData_redhatV2 = r[0];
                 radarData_redhatV3 = r[1];
+                radarData_redhatV3Ver = r[2];
                 break;
         }
 
@@ -1432,6 +1438,51 @@ const displayDetail = function(cveID) {
         chartV3.destroy();
     }
 
+    const prioltyFlag = db.get("vulsrepo_pivotPriority");
+    let nvd = prioltyFlag.indexOf("nvd");
+    let jvn = prioltyFlag.indexOf("jvn");
+
+    let v2Datasets = [];
+    if (radarData_nvd.length > 0) {
+        v2Datasets.push({
+            label: "NVD",
+            backgroundColor: "rgba(179,181,198,0.2)",
+            borderColor: "rgba(179,181,198,1)",
+            pointBackgroundColor: "rgba(179,181,198,1)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgba(179,181,198,1)",
+            hitRadius: 5,
+            data: radarData_nvd
+        });
+    }
+    if (radarData_jvn.length > 0) {
+        v2Datasets.push({
+            label: "JVN",
+            backgroundColor: "rgba(255,99,132,0.2)",
+            borderColor: "rgba(255,99,132,1)",
+            pointBackgroundColor: "rgba(255,99,132,1)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgba(255,99,132,1)",
+            hitRadius: 5,
+            data: radarData_jvn
+        });
+    }
+    if (radarData_redhatV2.length > 0) {
+        v2Datasets.push({
+            label: "RedHat",
+            backgroundColor: "rgba(51,204,204,0.2)",
+            borderColor: "rgba(51,204,204,1)",
+            pointBackgroundColor: "rgba(51,204,204,1)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgba(51,204,204,1)",
+            hitRadius: 5,
+            data: radarData_redhatV2
+        });
+    }
+
     chartV2 = new Chart(ctxV2, {
         type: 'radar',
         options: {
@@ -1444,43 +1495,51 @@ const displayDetail = function(cveID) {
             }
         },
         data: {
-            labels: ["Access Vector(AV)", "Access Complexity(AC)", "Authentication(Au)", "Confidentiality Impact(C)", "Integrity Impact(I)", "Availability Impact(A)"],
-            datasets: [{
-                    label: "NVD",
-                    backgroundColor: "rgba(179,181,198,0.2)",
-                    borderColor: "rgba(179,181,198,1)",
-                    pointBackgroundColor: "rgba(179,181,198,1)",
-                    pointBorderColor: "#fff",
-                    pointHoverBackgroundColor: "#fff",
-                    pointHoverBorderColor: "rgba(179,181,198,1)",
-                    hitRadius: 5,
-                    data: radarData_nvd
-                },
-                {
-                    label: "JVN",
-                    backgroundColor: "rgba(255,99,132,0.2)",
-                    borderColor: "rgba(255,99,132,1)",
-                    pointBackgroundColor: "rgba(255,99,132,1)",
-                    pointBorderColor: "#fff",
-                    pointHoverBackgroundColor: "#fff",
-                    pointHoverBorderColor: "rgba(255,99,132,1)",
-                    hitRadius: 5,
-                    data: radarData_jvn
-                },
-                {
-                    label: "RedHatV2",
-                    backgroundColor: "rgba(51,204,204,0.2)",
-                    borderColor: "rgba(51,204,204,1)",
-                    pointBackgroundColor: "rgba(51,204,204,1)",
-                    pointBorderColor: "#fff",
-                    pointHoverBackgroundColor: "#fff",
-                    pointHoverBorderColor: "rgba(51,204,204,1)",
-                    hitRadius: 5,
-                    data: radarData_redhatV2
-                }
-            ]
+            labels: getVectorV2.label(nvd < jvn),
+            datasets: v2Datasets
         }
     });
+
+    let v3Datasets = [];
+    if (radarData_nvdV3.length > 0) {
+        v3Datasets.push({
+            label: "NVD " + radarData_nvdV3Ver,
+            backgroundColor: "rgba(179,181,198,0.2)",
+            borderColor: "rgba(179,181,198,1)",
+            pointBackgroundColor: "rgba(179,181,198,1)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgba(179,181,198,1)",
+            hitRadius: 5,
+            data: radarData_nvdV3
+    });
+    }
+    if (radarData_jvnV3.length > 0) {
+        v3Datasets.push({
+            label: "JVN " + radarData_jvnV3Ver,
+            backgroundColor: "rgba(255,99,132,0.2)",
+            borderColor: "rgba(255,99,132,1)",
+            pointBackgroundColor: "rgba(255,99,132,1)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgba(255,99,132,1)",
+            hitRadius: 5,
+            data: radarData_jvnV3
+    });
+    }
+    if (radarData_redhatV3.length > 0) {
+        v3Datasets.push({
+            label: "RedHat " + radarData_redhatV3Ver,
+            backgroundColor: "rgba(102,102,255,0.2)",
+            borderColor: "rgba(102,102,255,1)",
+            pointBackgroundColor: "rgba(102,102,255,1)",
+            pointBorderColor: "#fff",
+            pointHoverBackgroundColor: "#fff",
+            pointHoverBorderColor: "rgba(102,102,255,1)",
+            hitRadius: 5,
+            data: radarData_redhatV3
+    });
+    }
 
     chartV3 = new Chart(ctxV3, {
         type: 'radar',
@@ -1494,41 +1553,8 @@ const displayDetail = function(cveID) {
             }
         },
         data: {
-            labels: ["Access Vector(AV)", "Access Complexity(AC)", "Privileges Required(PR)", "User Interaction(UI)", "Scope(S)", "Confidentiality Impact(C)", "Integrity Impact(I)", "Availability Impact(A)"],
-            datasets: [{
-                label: "NVD v3",
-                backgroundColor: "rgba(179,181,198,0.2)",
-                borderColor: "rgba(179,181,198,1)",
-                pointBackgroundColor: "rgba(179,181,198,1)",
-                pointBorderColor: "#fff",
-                pointHoverBackgroundColor: "#fff",
-                pointHoverBorderColor: "rgba(179,181,198,1)",
-                hitRadius: 5,
-                data: radarData_nvdV3
-                },
-                {
-                label: "JVN v3",
-                backgroundColor: "rgba(255,99,132,0.2)",
-                borderColor: "rgba(255,99,132,1)",
-                pointBackgroundColor: "rgba(255,99,132,1)",
-                pointBorderColor: "#fff",
-                pointHoverBackgroundColor: "#fff",
-                pointHoverBorderColor: "rgba(255,99,132,1)",
-                hitRadius: 5,
-                data: radarData_jvnV3
-                },
-                {
-                label: "RedHatV3",
-                backgroundColor: "rgba(102,102,255,0.2)",
-                borderColor: "rgba(102,102,255,1)",
-                pointBackgroundColor: "rgba(102,102,255,1)",
-                pointBorderColor: "#fff",
-                pointHoverBackgroundColor: "#fff",
-                pointHoverBorderColor: "rgba(102,102,255,1)",
-                hitRadius: 5,
-                data: radarData_redhatV3
-
-            }]
+            labels: getVectorV3.label(nvd < jvn),
+            datasets: v3Datasets
         }
     });
 
@@ -1548,10 +1574,6 @@ const displayDetail = function(cveID) {
         mode: 'words',
         truncate: 50
     });
-
-    const prioltyFlag = db.get("vulsrepo_pivotPriority");
-    let nvd = prioltyFlag.indexOf("nvd");
-    let jvn = prioltyFlag.indexOf("jvn");
 
     // ---CweID---
     let getCweIDInfo = function(cveContents, target) {
