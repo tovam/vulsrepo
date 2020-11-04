@@ -31,6 +31,14 @@ const getSplitArray = function(full_vector) {
 
 const getVectorV2 = {
 
+    label: function(en) {
+        if (en === true) {
+            return ["Access Vector(AV)", "Access Complexity(AC)", "Authentication(Au)", "Confidentiality Impact(C)", "Integrity Impact(I)", "Availability Impact(A)"];
+        } else {
+            return ["攻撃元区分(AV)", "攻撃条件の複雑さ(AC)", "攻撃前の認証要否(Au)", "機密性への影響(C)", "完全性への影響(I)", "可用性への影響(A)"];
+        }
+    },
+
     cvss: function(vector) {
         const subscore = vector.split(":");
 
@@ -114,6 +122,14 @@ const getVectorV2 = {
 
 
 const getVectorV3 = {
+
+    label: function(en) {
+        if (en === true) {
+            return ["Access Vector(AV)", "Access Complexity(AC)", "Privileges Required(PR)", "User Interaction(UI)", "Scope(S)", "Confidentiality Impact(C)", "Integrity Impact(I)", "Availability Impact(A)"];
+        } else {
+            return ["攻撃元区分(AV)", "攻撃条件の複雑さ(AC)", ["攻撃に必要な","特権レベル(PR)"], "利用者の関与(UI)", "影響の想定範囲(S)", "機密性への影響(C)", "完全性への影響(I)", "可用性への影響(A)"];
+        }
+    },
 
     cvss: function(vector, scopeVector) {
         const subscore = vector.split(":");
