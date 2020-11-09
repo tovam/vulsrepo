@@ -271,6 +271,11 @@ a.collapse {
   display: inline-block;
 }
 
+.modal .setting {
+    width: 1150px;
+    margin-left: -120px;
+}
+
 .modal .large {
     width: 1650px;
     margin-left: -525px;
@@ -310,14 +315,16 @@ body.noscroll {
     position: fixed;
 }
 
-#pivot-priority {
+.connectedSortable {
     list-style-type: none;
-    margin: 0px 0px 0px 15px;
-    padding: 0;
+    margin: 0px 0px 0px 8px;
+    padding: 10px;
     width: 260px;
+    min-height: 62px;
+    background-color: #ddd;
 }
 
-#pivot-priority li {
+.connectedSortable li {
     margin: 3px 3px 3px 3px;
     padding: 5px;
     font-size: 120%;
@@ -328,12 +335,12 @@ body.noscroll {
     text-align: center;
 }
 
-#pivot-priority li span {
+.connectedSortable li span {
     padding-left: 0px;
     padding-right: 0px;
 }
 
-#pivot-priority .placeholder {
+.connectedSortable .placeholder {
     border: 1px dashed red;
     background-color: pink;
 }
