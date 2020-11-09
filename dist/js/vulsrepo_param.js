@@ -33,6 +33,7 @@ const vulsrepo_params = {
     vulsrepo_chkPivotSummary: "boolean",
     vulsrepo_chkPivotCvss: "boolean",
     vulsrepo_pivotPriority: "array",
+    vulsrepo_pivotPriorityOff: "array",
     vulsrepo_chkCweTop25: "boolean",
     vulsrepo_chkOwaspTopTen2017: "boolean",
     vulsrepo_chkSansTop25: "boolean"

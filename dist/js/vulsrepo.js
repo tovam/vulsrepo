@@ -34,9 +34,13 @@ const restoreParam = function() {
                             showAlert("param decode error", decode_str);
                         }
                         url_param = JSON.parse(decode_str);
-                        let sorted_url_param = url_param.slice();
-                        let sorted_detailTaget = vulsrepo.detailTaget.slice();
-                        if (sorted_url_param.sort().toString() === sorted_detailTaget.sort().toString()) {
+                        let valid = true;
+                        $.each(url_param, function(u, u_val) {
+                            if (vulsrepo.detailTaget.indexOf(u_val) == -1) {
+                                valid = false;
+                            }
+                        });
+                        if (valid === true) {
                             db.set(key, url_param);
                         } else {
                             showAlert("invalid parameter", param[key]);
@@ -421,7 +425,7 @@ const setEvents = function() {
 
     // ---priority
 
-    var priority = db.get("vulsrepo_pivotPriority");
+    let priority = db.get("vulsrepo_pivotPriority");
     if (priority === null) {
         db.set("vulsrepo_pivotPriority", vulsrepo.detailTaget);
     }
@@ -430,14 +434,33 @@ const setEvents = function() {
         db.set("vulsrepo_pivotPriority", vulsrepo.detailTaget);
     }
 
-    if (priority != null && priority.length !== 10) {
-        db.set("vulsrepo_pivotPriority", vulsrepo.detailTaget);
+    let priorityOff = db.get("vulsrepo_pivotPriorityOff");
+    if (priorityOff === null) {
+        priorityOff = [];
+        db.set("vulsrepo_pivotPriorityOff", priorityOff);
+    }
+
+    if (Array.isArray(priorityOff) === false) {
+        priorityOff = [];
+        db.set("vulsrepo_pivotPriorityOff", priorityOff);
+    }
+
+    if (priority != null && priority.length + priorityOff.length !== 10) {
+        $.each(vulsrepo.detailTaget, function(i, i_val) {
+            if (priority.indexOf(i_val) == -1 && priorityOff.indexOf(i_val) == -1) {
+                priority.push(i_val);
+            }
+        });
+        db.set("vulsrepo_pivotPriority", priority);
     }
 
     $.each(db.get("vulsrepo_pivotPriority"), function(i, i_val) {
         $("#pivot-priority").append('<li class="ui-state-default"><span class="fa fa-arrows-v" aria-hidden="true"></span>' + i_val + '</li>');
     });
     $('#pivot-priority').sortable({
+        connectWith: ".connectedSortable",
+        cancel: 'li:only-child', // at least one item
+        forcePlaceholderSize: true,
         tolerance: "pointer",
         distance: 1,
         cursor: "move",
@@ -453,11 +476,33 @@ const setEvents = function() {
     });
     $('#pivot-priority').disableSelection();
 
+    $.each(db.get("vulsrepo_pivotPriorityOff"), function(i, i_val) {
+        $("#pivot-priority-off").append('<li class="ui-state-default"><span class="fa fa-arrows-v" aria-hidden="true"></span>' + i_val + '</li>');
+    });
+    $('#pivot-priority-off').sortable({
+        connectWith: ".connectedSortable",
+        forcePlaceholderSize: true,
+        tolerance: "pointer",
+        distance: 1,
+        cursor: "move",
+        revert: 100,
+        placeholder: "placeholder",
+        update: function() {
+            let tmp_pri = [];
+            $("#pivot-priority-off li").each(function(index) {
+                tmp_pri.push($(this).text());
+            });
+            db.set("vulsrepo_pivotPriorityOff", tmp_pri);
+        }
+    });
+    $('#pivot-priority-off').disableSelection();
+
     $("#pivot-link").click(function() {
         let str = location.href + "?vulsrepo_pivot_conf_tmp=" + LZString.compressToEncodedURIComponent(localStorage.getItem("vulsrepo_pivot_conf_tmp"));
         str = str + "&vulsrepo_chkPivotSummary=" + db.get("vulsrepo_chkPivotSummary");
         str = str + "&vulsrepo_chkPivotCvss=" + db.get("vulsrepo_chkPivotCvss");
         str = str + "&vulsrepo_pivotPriority=" + LZString.compressToEncodedURIComponent(localStorage.getItem("vulsrepo_pivotPriority"));
+        str = str + "&vulsrepo_pivotPriorityOff=" + LZString.compressToEncodedURIComponent(localStorage.getItem("vulsrepo_pivotPriorityOff"));
         str = str + "&vulsrepo_chkCweTop25=" + db.get("vulsrepo_chkCweTop25");
         str = str + "&vulsrepo_chkOwaspTopTen2017=" + db.get("vulsrepo_chkOwaspTopTen2017");
         str = str + "&vulsrepo_chkSansTop25=" + db.get("vulsrepo_chkSansTop25");
@@ -1224,7 +1269,8 @@ const createDetailData = function(cveID) {
             targetObj["exploits"] = tmpCve.exploits;
             targetObj["metasploits"] = tmpCve.metasploits;
             targetObj["alertDict"] = tmpCve.alertDict;
-            $.each(vulsrepo.detailTaget, function(i, i_val) {
+            let priority = db.get("vulsrepo_pivotPriority");
+            $.each(priority, function(i, i_val) {
                 if (tmpCve.cveContents !== undefined && tmpCve.cveContents[i_val] !== undefined) {
                     targetObj.cveContents[i_val] = tmpCve.cveContents[i_val];
                     // Make CWE information
@@ -1273,6 +1319,18 @@ const initDetail = function() {
         $("#summary_" + i_val).empty();
         $("#lastModified_" + i_val).empty();
     });
+    let priority = db.get("vulsrepo_pivotPriority");
+    $.each(priority.slice().reverse(), function(i, i_val) {
+        $("#typeRow_" + i_val).show();
+        $("#typeRow_" + i_val + "V3").show();
+        $("#typeRow_" + i_val + "V3").insertAfter("#typeRowHeader");
+        $("#typeRow_" + i_val).insertAfter("#typeRowHeader");
+    });
+    let priorityOff = db.get("vulsrepo_pivotPriorityOff");
+    $.each(priorityOff, function(i, i_val) {
+        $("#typeRow_" + i_val).hide();
+        $("#typeRow_" + i_val + "V3").hide();
+    });
 };
 
 
@@ -1289,6 +1347,8 @@ const displayDetail = function(cveID) {
         let dest = target;
         if (target === "redhat_api") {
             dest = "redhat"
+        } else if (target === "debian_security_tracker") {
+            dest = "debian"
         }
 
         var cvss3Ver = "";
@@ -1378,12 +1438,14 @@ const displayDetail = function(cveID) {
             }
 
         } else {
-            $("#scoreText_" + dest).text("None").addClass("cvss-None");
-            $("#scoreText_" + dest + "V3").text("None").addClass("cvss-None");
-            $("#summary_" + dest).text("NO DATA");
-            $("#summary_" + dest + "V3").text("NO DATA");
-            $("#lastModified_" + dest).text("------");
-            $("#lastModified_" + dest + "V3").text("------");
+            if ($("#scoreText_" + dest).text() === "") {
+                $("#scoreText_" + dest).text("None").addClass("cvss-None");
+                $("#scoreText_" + dest + "V3").text("None").addClass("cvss-None");
+                $("#summary_" + dest).text("NO DATA");
+                $("#summary_" + dest + "V3").text("NO DATA");
+                $("#lastModified_" + dest).text("------");
+                $("#lastModified_" + dest + "V3").text("------");
+            }
         }
 
         if (resultV2 === undefined) {
@@ -1405,7 +1467,8 @@ const displayDetail = function(cveID) {
     let radarData_redhatV2
     let radarData_redhatV3
 
-    $.each(vulsrepo.detailTaget, function(i, i_val) {
+    let priority = db.get("vulsrepo_pivotPriority");
+    $.each(priority, function(i, i_val) {
         let r = dispCvss(i_val);
         switch (i_val) {
             case "nvd":
@@ -1443,7 +1506,7 @@ const displayDetail = function(cveID) {
     let jvn = prioltyFlag.indexOf("jvn");
 
     let v2Datasets = [];
-    if (radarData_nvd.length > 0) {
+    if (radarData_nvd !== undefined && radarData_nvd.length > 0) {
         v2Datasets.push({
             label: "NVD",
             backgroundColor: "rgba(179,181,198,0.2)",
@@ -1456,7 +1519,7 @@ const displayDetail = function(cveID) {
             data: radarData_nvd
         });
     }
-    if (radarData_jvn.length > 0) {
+    if (radarData_jvn !== undefined && radarData_jvn.length > 0) {
         v2Datasets.push({
             label: "JVN",
             backgroundColor: "rgba(255,99,132,0.2)",
@@ -1469,7 +1532,7 @@ const displayDetail = function(cveID) {
             data: radarData_jvn
         });
     }
-    if (radarData_redhatV2.length > 0) {
+    if (radarData_redhatV2 !== undefined && radarData_redhatV2.length > 0) {
         v2Datasets.push({
             label: "RedHat",
             backgroundColor: "rgba(51,204,204,0.2)",
@@ -1501,7 +1564,7 @@ const displayDetail = function(cveID) {
     });
 
     let v3Datasets = [];
-    if (radarData_nvdV3.length > 0) {
+    if (radarData_nvdV3 !== undefined && radarData_nvdV3.length > 0) {
         v3Datasets.push({
             label: "NVD " + radarData_nvdV3Ver,
             backgroundColor: "rgba(179,181,198,0.2)",
@@ -1514,7 +1577,7 @@ const displayDetail = function(cveID) {
             data: radarData_nvdV3
     });
     }
-    if (radarData_jvnV3.length > 0) {
+    if (radarData_jvnV3 !== undefined && radarData_jvnV3.length > 0) {
         v3Datasets.push({
             label: "JVN " + radarData_jvnV3Ver,
             backgroundColor: "rgba(255,99,132,0.2)",
@@ -1527,7 +1590,7 @@ const displayDetail = function(cveID) {
             data: radarData_jvnV3
     });
     }
-    if (radarData_redhatV3.length > 0) {
+    if (radarData_redhatV3 !== undefined && radarData_redhatV3.length > 0) {
         v3Datasets.push({
             label: "RedHat " + radarData_redhatV3Ver,
             backgroundColor: "rgba(102,102,255,0.2)",
