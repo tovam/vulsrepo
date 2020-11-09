@@ -30,6 +30,8 @@ For more information such as Installation, Usage, visit [vuls.io](https://vuls.i
 
 [日本語翻訳ドキュメント](https://vuls.io/docs/ja/vulsrepo.html)
 
+[日本語翻訳ドキュメント（草稿）]https://gist.github.com/ishiDACo/b3d47091427903bae1c8a7ef49b95707
+
 # Issue
 
 https://github.com/ishiDACo/vulsrepo/issues
