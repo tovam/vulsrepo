@@ -2187,11 +2187,11 @@ const displayChangelogDetail = function(ankerData) {
             if (isCheckNull(a_val.listenPorts) === false) {
                 $.each(a_val.listenPorts, function(l, l_val) {
                     if (l > 0) {
-                        rowData = rowData + "<br";
+                        rowData = rowData + "<br>";
                     }
                     rowData = rowData + l_val.address + ":" + l_val.port;
                     if (isCheckNull(l_val.portScanSuccessOn) === false) {
-                        rowData = rowData + "(◉ Scannable: [" + l_val.portScanSuccessOn + "])";
+                        rowData = rowData + " (◉ Scannable: [" + l_val.portScanSuccessOn + "])";
                     }
                 });
             }
