@@ -621,10 +621,24 @@
                 </table>
             </div>
 
-            <p class="bg-primary">
+            <div id="changelog-affected-processes">
+                <p class="bg-primary">
+                Affected Processes
+                </p>
+                <table class="table table-condensed table-bordered">
+                    <tr id ="changelog-affected-processes-header" class="info">
+                        <th>PID</th>
+                        <th>Name</th>
+                        <th>Address:Port(Scannable)</th>
+                    </tr>
+                </table>
+            </div>
+            <div>
+                <p class="bg-primary">
                 Changelog
-            </p>
-            <div id="changelog-contents"></div>
+                </p>
+                <div id="changelog-contents"></div>
+            </div>
         </div>
     </div>
 </body>

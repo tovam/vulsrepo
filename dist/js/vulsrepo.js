@@ -608,6 +608,7 @@ const createPivotData = function(resultArray) {
                 "Changelog": "healthy",
                 "DetectionMethod": "healthy",
                 "ConfidenceScore": "healthy",
+                "PortScannable": "healthy",
                 "Published": "healthy",
                 "Last Modified": "healthy",
             };
@@ -803,18 +804,33 @@ const createPivotData = function(resultArray) {
                             result["NewPackageVer"] = "None";
                         }
                         result["Repository"] = pkgInfo.repository;
+                        result["PortScannable"] = "";
+                        if (pkgInfo.AffectedProcs !== undefined) {
+                            $.each(pkgInfo.AffectedProcs, function(a, a_val) {
+                                if (a_val.listenPorts !== undefined) {
+                                    $.each(a_val.listenPorts, function(l, l_val) {
+                                        if (isCheckNull(l_val.portScanSuccessOn) === false) {
+                                            result["PortScannable"] = "CHK-PortScannable-" + y_val.cveID + "," + x_val.scanTime + "," + x_val.data.serverName + "," + x_val.data.container.name + "," + pkgName;
+                                            return;
+                                        }
+                                    });
+                                }
+                            });
+                        }
                     } else if (libInfo !== undefined) {
                         // === for library
                         result["PackageVer"] = libInfo.Version;
                         result["NewPackageVer"] = "Unknown";
                         result["Changelog"] = "None";
                         result["Repository"] = ""
+                        result["PortScannable"] = "";
                     } else {
                         // ===for cpe
                         result["PackageVer"] = "Unknown";
                         result["NewPackageVer"] = "Unknown";
                         result["Changelog"] = "None";
                         result["Repository"] = ""
+                        result["PortScannable"] = "";
                     }
 
                     var getSummaryAndDate = function(target) {
@@ -1137,6 +1153,7 @@ const displayPivot = function(array) {
             addCveIDLink();
             addCweIDLink();
             addChangelogLink();
+            addPortScannableLink();
         }
 
     };
@@ -1254,6 +1271,15 @@ const addChangelogLink = function() {
     doms.each(function() {
         let changelogSearch = $(this).text().replace("CHK-changelog-", "").split(",");
         $(this).text("").append('<a href="#contents" class="lightbox" data-cveid="' + changelogSearch[0] + '" data-scantime="' + changelogSearch[1] + '" data-server="' + changelogSearch[2] + '" data-container="' + changelogSearch[3] + '" data-package="' + changelogSearch[4] + '">Changelog</a>');
+    });
+    addEventDisplayChangelog();
+};
+
+const addPortScannableLink = function() {
+    let doms = $("#pivot_base").find("th:contains('CHK-PortScannable-')");
+    doms.each(function() {
+        let changelogSearch = $(this).text().replace("CHK-PortScannable-", "").split(",");
+        $(this).text("").append('<a href="#contents" class="lightbox" data-cveid="' + changelogSearch[0] + '" data-scantime="' + changelogSearch[1] + '" data-server="' + changelogSearch[2] + '" data-container="' + changelogSearch[3] + '" data-package="' + changelogSearch[4] + '">Scannable</a>');
     });
     addEventDisplayChangelog();
 };
@@ -2082,6 +2108,7 @@ const displayChangelogDetail = function(ankerData) {
     let changelogInfo = getChangeLogInfo(scantime, server, container, cveid, package);
 
     $("#changelog-cveid, #changelog-servername, #changelog-containername, #changelog-packagename, #changelog-method, #changelog-score, #changelog-contents, #changelog-notfixedyet").empty();
+    $(".changelog-affected-processes-data").remove();
     $("#changelog-cveid").append(cveid);
     $("#changelog-servername").append(server);
     $("#changelog-containername").append(container);
@@ -2149,6 +2176,32 @@ const displayChangelogDetail = function(ankerData) {
     } else {
         $("#changelog-packagename").append(package);
         $("#changelog-contents").append("NO DATA");
+    }
+
+    if (isCheckNull(changelogInfo.pkgContents.AffectedProcs) === false) {
+        $.each(changelogInfo.pkgContents.AffectedProcs.slice().reverse(), function(a, a_val) {
+            let rowData = "<tr class='changelog-affected-processes-data'>";
+            rowData = rowData + "<td>" + a_val.pid + "</td>";
+            rowData = rowData + "<td>" + a_val.name + "</td>";
+            rowData = rowData + "<td>";
+            if (isCheckNull(a_val.listenPorts) === false) {
+                $.each(a_val.listenPorts, function(l, l_val) {
+                    if (l > 0) {
+                        rowData = rowData + "<br";
+                    }
+                    rowData = rowData + l_val.address + ":" + l_val.port;
+                    if (isCheckNull(l_val.portScanSuccessOn) === false) {
+                        rowData = rowData + "(◉ Scannable: [" + l_val.portScanSuccessOn + "])";
+                    }
+                });
+            }
+            rowData = rowData + "</td>";
+            rowData = rowData + "</tr>;"
+            $(rowData).insertAfter('#changelog-affected-processes-header');
+        });
+        $("#changelog-affected-processes").show();
+    } else {
+        $("#changelog-affected-processes").hide();
     }
 }
 
