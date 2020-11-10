@@ -908,10 +908,6 @@ const createPivotData = function(resultArray) {
                             return false;
                         }
 
-                        if (y_val.cveContents[target].cvss2Score === 0 & y_val.cveContents[target].cvss3Score === 0) {
-                            return false;
-                        }
-
                         if (y_val.cveContents[target].cvss3Score !== 0) {
                             result["CVSS Score"] = y_val.cveContents[target].cvss3Score.toFixed(1);
                             result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss3Severity);
@@ -919,6 +915,10 @@ const createPivotData = function(resultArray) {
                         } else if (y_val.cveContents[target].cvss2Score !== 0) {
                             result["CVSS Score"] = y_val.cveContents[target].cvss2Score.toFixed(1);
                             result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss2Severity);
+                            result["CVSS Score Type"] = target;
+                        } else {
+                            result["CVSS Score"] = "-";
+                            result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss3Severity);
                             result["CVSS Score Type"] = target;
                         }
 
@@ -1095,7 +1095,7 @@ const displayPivot = function(array) {
             }
         },
         sorters: {
-            "CVSS Severity": sortAs(["healthy", "Unknown", "Critical", "High", "Important", "Medium", "Moderate", "Low"]),
+            "CVSS Severity": sortAs(["healthy", "Unknown", "Critical", "High", "Important", "Medium", "Moderate", "Low", "Negligible", "Unimportant", "Pending", "Not Vulnerable"]),
             "CveID": sortAs(["healthy"]),
             "CweID": sortAs(["healthy"]),
             "Packages": sortAs(["healthy"]),
@@ -1124,7 +1124,7 @@ const displayPivot = function(array) {
             db.set("vulsrepo_pivot_conf_tmp", config);
             $("#pivot_base").find(".pvtVal[data-value='null']").css("background-color", "#b2f3b2");
 
-            let cvsss = ["Critical", "High", "Medium", "Low", "Important", "Moderate"];
+            let cvsss = ["Unknown", "Critical", "High", "Medium", "Low", "Important", "Moderate", "Negligible", "Unimportant", "Pending", "Not Vulnerable"];
             $.each(cvsss, function(i, i_val) {
                 $("#pivot_base").find("th:contains('" + i_val + "')").each(function() {
                     if ($(this).text() === i_val) {
@@ -1195,11 +1195,25 @@ const addCveIDLink = function() {
     });
 };
 
-const addCweIDLink = function() {
+const isNVDHighPriority = function() {
     const prioltyFlag = db.get("vulsrepo_pivotPriority");
     let nvd = prioltyFlag.indexOf("nvd");
     let jvn = prioltyFlag.indexOf("jvn");
 
+    if (nvd == -1) {
+        nvd = 99; // lowest priority
+    }
+    if (jvn == -1) {
+        jvn = 99; // lowest priority
+    }
+    if (nvd <= jvn) {
+        return true;
+    } else {
+        return false;
+    }
+};
+
+const addCweIDLink = function() {
     let doms = $("#pivot_base").find("th:contains('CHK-cweid-')");
     doms.each(function() {
         let cveid = $(this).text();
@@ -1211,7 +1225,7 @@ const addCweIDLink = function() {
                 // NVD-CWE-Other and NVD-CWE-noinfo
                 generated = generated + cveids[i];
             } else {
-                if (nvd < jvn) {
+                if (isNVDHighPriority()) {
                     // NVD
                     generated = generated + "<a href=\"" + detailLink.cwe_nvd.url + cveids[i].replace(/\[!!\]/, "").replace(/CWE-/, "") + "\" rel='noopener noreferrer' target='_blank'>" + cveids[i] + "</a>";
                 } else {
@@ -1527,10 +1541,6 @@ const displayDetail = function(cveID) {
         chartV3.destroy();
     }
 
-    const prioltyFlag = db.get("vulsrepo_pivotPriority");
-    let nvd = prioltyFlag.indexOf("nvd");
-    let jvn = prioltyFlag.indexOf("jvn");
-
     let v2Datasets = [];
     if (radarData_nvd !== undefined && radarData_nvd.length > 0) {
         v2Datasets.push({
@@ -1584,7 +1594,7 @@ const displayDetail = function(cveID) {
             }
         },
         data: {
-            labels: getVectorV2.label(nvd < jvn),
+            labels: getVectorV2.label(isNVDHighPriority()),
             datasets: v2Datasets
         }
     });
@@ -1642,7 +1652,7 @@ const displayDetail = function(cveID) {
             }
         },
         data: {
-            labels: getVectorV3.label(nvd < jvn),
+            labels: getVectorV3.label(isNVDHighPriority()),
             datasets: v3Datasets
         }
     });
@@ -1675,7 +1685,7 @@ const displayDetail = function(cveID) {
                     if (data.cweDict[cweid] !== undefined) {
                         $("#cwe-" + target).append("<li id='cweid-" + cweid + "-" + target + "'>");
                         let name = "";
-                        if (nvd < jvn) {
+                        if (isNVDHighPriority()) {
                             if (data.cweDict[cweid].en !== undefined) {
                                 name = data.cweDict[cweid].en.name;
                             } else if (name === "" && data.cweDict[cweid].ja !== undefined) {
@@ -1699,7 +1709,7 @@ const displayDetail = function(cveID) {
                         if (data.cweDict[cweid].owaspTopTen2017 !== undefined && data.cweDict[cweid].owaspTopTen2017 !== "") {
                             // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
                             let owaspLink = "";
-                            if (nvd < jvn) {
+                            if (isNVDHighPriority()) {
                                 owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].en;
                             } else {
                                 owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].ja;
@@ -1795,7 +1805,7 @@ const displayDetail = function(cveID) {
             }
         }
     }
-    if (nvd < jvn) {
+    if (isNVDHighPriority()) {
         addCert("en", "USCERT");
         addCert("ja", "JPCERT");
     } else {
@@ -1872,7 +1882,7 @@ const displayDetail = function(cveID) {
         }
     }
 
-    $.each(prioltyFlag, function(i, i_val) {
+    $.each(priority, function(i, i_val) {
         addRef(i_val);
     });
 
