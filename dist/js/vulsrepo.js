@@ -671,49 +671,49 @@ const createPivotData = function(resultArray) {
                     result["ServerName"] = getServerName(x_val.data);
 
                     var getCweId = function(target) {
-                        if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined) {
+                        if (y_val.cveContents === undefined ||
+                            y_val.cveContents[target] === undefined ||
+                            y_val.cveContents[target].cweIDs === undefined ) {
                             return false;
                         }
 
                         let cweIds = y_val.cveContents[target].cweIDs;
                         let cweIdStr = "";
-                        if (cweIds !== undefined) {
-                            // NVD-CWE-Other and NVD-CWE-noinfo
-                            if(cweIds[0].indexOf("NVD-CWE-") !== -1) {
-                                result["CweID"] = cweIds[0];
-                            } else {
-                                for(var j = 0; j < cweIds.length; j++) {
-                                    cweIdStr = cweIdStr + cweIds[j];
-                                    let match = false;
-                                    let makeCweStr = function(source) {
-                                        if (match === true) {
-                                            return;
+                        // NVD-CWE-Other and NVD-CWE-noinfo
+                        if(cweIds[0].indexOf("NVD-CWE-") !== -1) {
+                            result["CweID"] = cweIds[0];
+                        } else {
+                            for(var j = 0; j < cweIds.length; j++) {
+                                cweIdStr = cweIdStr + cweIds[j];
+                                let match = false;
+                                let makeCweStr = function(source) {
+                                    if (match === true) {
+                                        return;
+                                    }
+                                    for(var i = 0; i < cweTop[source].length; i++) {
+                                        if(cweIds[j] === "CWE-" + cweTop[source][i]) {
+                                            match = true;
+                                            break;
                                         }
-                                        for(var i = 0; i < cweTop[source].length; i++) {
-                                            if(cweIds[j] === "CWE-" + cweTop[source][i]) {
-                                                match = true;
-                                                break;
-                                            }
-                                        }
-                                        if (match === true) {
-                                            cweIdStr = cweIdStr + "[!!]";
-                                        }
-                                    };
-                                    if (cweTop25Flag !== "false") {
-                                        makeCweStr("cweTop25");
                                     }
-                                    if (owaspTopTen2017Flag !== "false") {
-                                        makeCweStr("owaspTopTen2017");
+                                    if (match === true) {
+                                        cweIdStr = cweIdStr + "[!!]";
                                     }
-                                    if (sansTop25Flag !== "false") {
-                                        makeCweStr("sansTop25");
-                                    }
-                                    if (j < cweIds.length - 1) {
-                                        cweIdStr = cweIdStr + ", ";
-                                    }
+                                };
+                                if (cweTop25Flag !== "false") {
+                                    makeCweStr("cweTop25");
                                 }
-                                result["CweID"] = "CHK-cweid-" + cweIdStr;
+                                if (owaspTopTen2017Flag !== "false") {
+                                    makeCweStr("owaspTopTen2017");
+                                }
+                                if (sansTop25Flag !== "false") {
+                                    makeCweStr("sansTop25");
+                                }
+                                if (j < cweIds.length - 1) {
+                                    cweIdStr = cweIdStr + ", ";
+                                }
                             }
+                            result["CweID"] = "CHK-cweid-" + cweIdStr;
                         }
                         return true;
                     };
@@ -1692,11 +1692,11 @@ const displayDetail = function(cveID) {
                         $("#cweid-" + cweid + "-" + target).append(" (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
                         $("#cweid-" + cweid + "-" + target).append("<span>&nbsp;/&nbsp;</span>");
                         $("#cweid-" + cweid + "-" + target).append("<a href=\"" + detailLink.cwe_jvn.url + x_val + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)");
-                        if (data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
+                        if (data.cweDict[cweid].cweTopTwentyfive2019 !== undefined && data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
                             // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
                             $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>");
                         }
-                        if (data.cweDict[cweid].owaspTopTen2017 !== "") {
+                        if (data.cweDict[cweid].owaspTopTen2017 !== undefined && data.cweDict[cweid].owaspTopTen2017 !== "") {
                             // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
                             let owaspLink = "";
                             if (nvd < jvn) {
@@ -1706,7 +1706,7 @@ const displayDetail = function(cveID) {
                             }
                             $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + owaspLink + "\" rel='noopener noreferrer' target='_blank' class='badge count'>OWASP Rank: " + data.cweDict[cweid].owaspTopTen2017 +"</a>");
                         }
-                        if (data.cweDict[cweid].sansTopTwentyfive !== "") {
+                        if (data.cweDict[cweid].sansTopTwentyfive !== undefined && data.cweDict[cweid].sansTopTwentyfive !== "") {
                             // SANS Top25 https://www.sans.org/top25-software-errors/
                             $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + detailLink.sansTopTwentyfive.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>SANS Rank: " + data.cweDict[cweid].sansTopTwentyfive + "</a>");
                         }
