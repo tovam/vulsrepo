@@ -1,6 +1,6 @@
 [Unit]
 Description=vulsrepo daemon
-Documentation=https://github.com/usiusi360/vulsrepo
+Documentation=https://github.com/ishiDACo/vulsrepo
 
 [Service]
 ExecStart = /home/vuls-user/vulsrepo/server/vulsrepo-server
