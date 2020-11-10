@@ -1359,17 +1359,27 @@ const initDetail = function() {
         $("#summary_" + i_val).empty();
         $("#lastModified_" + i_val).empty();
     });
+    let priorityOff = db.get("vulsrepo_pivotPriorityOff");
+    $.each(priorityOff, function(i, i_val) {
+        if (i_val === "redhat_api") {
+            i_val = "redhat"
+        } else if (i_val === "debian_security_tracker") {
+            i_val = "debian"
+        }
+        $("#typeRow_" + i_val).hide();
+        $("#typeRow_" + i_val + "V3").hide();
+    });
     let priority = db.get("vulsrepo_pivotPriority");
     $.each(priority.slice().reverse(), function(i, i_val) {
+        if (i_val === "redhat_api") {
+            i_val = "redhat"
+        } else if (i_val === "debian_security_tracker") {
+            i_val = "debian"
+        }
         $("#typeRow_" + i_val).show();
         $("#typeRow_" + i_val + "V3").show();
         $("#typeRow_" + i_val + "V3").insertAfter("#typeRowHeader");
         $("#typeRow_" + i_val).insertAfter("#typeRowHeader");
-    });
-    let priorityOff = db.get("vulsrepo_pivotPriorityOff");
-    $.each(priorityOff, function(i, i_val) {
-        $("#typeRow_" + i_val).hide();
-        $("#typeRow_" + i_val + "V3").hide();
     });
 };
 
