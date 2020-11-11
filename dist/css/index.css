@@ -49,8 +49,8 @@ a {
     cursor: pointer;
 }
 
-pre {
-	white-space: pre-wrap ;
+.div-pre {
+    white-space: pre-wrap;
 }
 
 .alert {
