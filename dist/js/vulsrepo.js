@@ -918,8 +918,16 @@ const createPivotData = function(resultArray) {
                             result["CVSS Score Type"] = target;
                         } else {
                             result["CVSS Score"] = "-";
-                            result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss3Severity);
-                            result["CVSS Score Type"] = target;
+                            if (y_val.cveContents[target].cvss3Severity !== "") {
+                                result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss3Severity);
+                                result["CVSS Score Type"] = target;
+                            } else if (isCheckNull(y_val.distroAdvisories) === false) {
+                                result["CVSS Severity"] = toUpperFirstLetter(y_val.distroAdvisories[0].severity);
+                                result["CVSS Score Type"] = target + "Advisory";
+                            } else {
+                                result["CVSS Severity"] = "Unknown";
+                                result["CVSS Score Type"] = "Unknown";
+                            }
                         }
 
                         if (cvssFlag !== "false") {
@@ -1254,8 +1262,11 @@ const addAdvisoryIDLink = function() {
         } else if (advisoryid.indexOf('RHSA-') != -1) {
             // RHSA
             $(this).text("").append("<a href=\"" + detailLink.rhn.url + advisoryid + ".html\" rel='noopener noreferrer' target='_blank'>" + advisoryid + '</a>');
+        } else if (advisoryid.indexOf('ELSA-') != -1) {
+            // ELSA
+            let elsa = advisoryid.trim().split(":");
+            $(this).text("").append("<a href=\"" + detailLink.oracleErrata.url + elsa[0] + ".html\" rel='noopener noreferrer' target='_blank'>" + elsa[0] + '</a>');
         }
-        // TODO ELSA
         // TODO OVMSA
     });
 };
@@ -1416,6 +1427,10 @@ const displayDetail = function(cveID) {
             } else if (target === "trivy") {
                 $("#scoreText_" + dest).removeClass();
                 $("#scoreText_" + dest).text(severityV3).addClass("cvss-" + severityV3);
+            } else if (target === "oracle" && isCheckNull(data.DistroAdvisories) === false) {
+                severityV3 = toUpperFirstLetter(data.DistroAdvisories[0].severity);
+                $("#scoreText_" + dest).removeClass();
+                $("#scoreText_" + dest).text(severityV3).addClass("cvss-" + severityV3);
             } else {
                 if (scoreV2 !== 0) {
                     $("#scoreText_" + dest).removeClass();
@@ -1437,12 +1452,12 @@ const displayDetail = function(cveID) {
             if (data.cveContents[target].summary !== "") {
                 if ($("#summary_" + dest).text() === "NO DATA" || $("#summary_" + dest).text() === "") {
                     $("#summary_" + dest).text("");
-                    $("#summary_" + dest).append("<div>" + data.cveContents[target].summary + "</div>");
+                    $("#summary_" + dest).append("<div class='div-pre'>" + data.cveContents[target].summary + "</div>");
                 }
             } else if (data.cveContents[target].title !== "") {
                 if ($("#summary_" + dest).text() === "NO DATA" || $("#summary_" + dest).text() === "") {
                     $("#summary_" + dest).text("");
-                    $("#summary_" + dest).append("<div>" + data.cveContents[target].title + "</div>");
+                    $("#summary_" + dest).append("<div class='div-pre'>" + data.cveContents[target].title + "</div>");
                 }
             }
 
@@ -1457,7 +1472,7 @@ const displayDetail = function(cveID) {
             if (data.cveContents[target].mitigation !== undefined && data.cveContents[target].mitigation !== "") {
                 countMitigation++;
                 $("#Mitigation").append("<div><strong>=== " + target + " ===</strong></div>");
-                $("#Mitigation").append("<pre>" + data.cveContents[target].mitigation + "</pre>");
+                $("#Mitigation").append("<div class='div-pre'>" + data.cveContents[target].mitigation + "</div>");
                 $("#count-mitigation").text(countMitigation);
                 $("#Mitigation-section").show();
             }
@@ -1680,6 +1695,11 @@ const displayDetail = function(cveID) {
     });
 
     $('#summary_trivy > div').collapser({
+        mode: 'words',
+        truncate: 50
+    });
+
+    $('#summary_oracle > div').collapser({
         mode: 'words',
         truncate: 50
     });
@@ -1973,7 +1993,14 @@ const getDistroAdvisoriesArray = function(DistroAdvisoriesData) {
                 url: detailLink.rhn.url + x_val.advisoryID + ".html",
                 disp: detailLink.rhn.disp,
             }
-        } else if ((x_val.advisoryID.indexOf("ELSA-") != -1) | (x_val.advisoryID.indexOf("OVMSA-") != -1)) {
+        } else if (x_val.advisoryID.indexOf("ELSA-") != -1) {
+            // ex. "advisoryID": "\nELSA-2020-3385:  libvncserver security update (IMPORTANT)\n"
+            let elsa = x_val.advisoryID.trim().split(":");
+            tmp_Map = {
+                url: detailLink.oracleErrata.url + elsa[0] + ".html",
+                disp: detailLink.oracleErrata.disp,
+            }
+        } else if (x_val.advisoryID.indexOf("OVMSA-") != -1) {
             tmp_Map = {
                 url: detailLink.oracleErrata.url + x_val.advisoryID + ".html",
                 disp: detailLink.oracleErrata.disp,
