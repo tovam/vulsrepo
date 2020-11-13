@@ -769,7 +769,14 @@ const createPivotData = function(resultArray) {
                     }
 
                     if (y_val.distroAdvisories !== undefined) {
-                        result["AdvisoryID"] = "CHK-advisoryid-" + y_val.distroAdvisories[0].advisoryID;
+                        let distroAdvisoriesIdStr = "";
+                        for(var j = 0; j < y_val.distroAdvisories.length; j++) {
+                            distroAdvisoriesIdStr = distroAdvisoriesIdStr + y_val.distroAdvisories[j].advisoryID;
+                            if (j < y_val.distroAdvisories.length - 1) {
+                                distroAdvisoriesIdStr = distroAdvisoriesIdStr + ", ";
+                            }
+                        }
+                        result["AdvisoryID"] = "CHK-advisoryid-" + distroAdvisoriesIdStr;
                     } else {
                         result["AdvisoryID"] = "None";
                     }
@@ -1155,6 +1162,7 @@ const displayPivot = function(array) {
 
             $("#pivot_base").find("th:contains('healthy')").css("background-color", "lightskyblue");
             $("#pivot_base").find("th:contains('CveID')").css("minWidth", "110px");
+            $("#pivot_base").find("th:contains('AdvisoryID')").css("minWidth", "110px");
             $("#pivot_base").find("th:contains('Reboot Required')").css("color", "#da0b00");
             addAdvisoryIDLink();
             addCertLink();
@@ -1253,21 +1261,32 @@ const addAdvisoryIDLink = function() {
     let doms = $("#pivot_base").find("th:contains('CHK-advisoryid-')");
     doms.each(function() {
         let advisoryid = $(this).text().replace("CHK-advisoryid-", "");
-        // Open Advisory page
-        if (advisoryid.indexOf('ALAS2-') != -1) {
-            // ALAS2
-            $(this).text("").append("<a href=\"" + detailLink.amazon.url + "AL2/" + advisoryid.replace("ALAS2-", "ALAS-") + ".html\" rel='noopener noreferrer' target='_blank'>" + advisoryid + '</a>');
-        } else if (advisoryid.indexOf('ALAS-') != -1) {
-            // TODO ALAS
-        } else if (advisoryid.indexOf('RHSA-') != -1) {
-            // RHSA
-            $(this).text("").append("<a href=\"" + detailLink.rhn.url + advisoryid + ".html\" rel='noopener noreferrer' target='_blank'>" + advisoryid + '</a>');
-        } else if (advisoryid.indexOf('ELSA-') != -1) {
-            // ELSA
-            let elsa = advisoryid.trim().split(":");
-            $(this).text("").append("<a href=\"" + detailLink.oracleErrata.url + elsa[0] + ".html\" rel='noopener noreferrer' target='_blank'>" + elsa[0] + '</a>');
-        }
-        // TODO OVMSA
+        let advisoryids = advisoryid.split(', ');
+        let generated = "";
+
+        $.each(advisoryids, function(a, a_val) {
+            // Open Advisory page
+            if (a_val.indexOf('ALAS2-') != -1) {
+                // ALAS2
+                generated = generated + "<a href=\"" + detailLink.amazon.url + "AL2/" + a_val.replace("ALAS2-", "ALAS-") + ".html\" rel='noopener noreferrer' target='_blank'>" + a_val + '</a>';
+            } else if (a_val.indexOf('ALAS-') != -1) {
+                // TODO ALAS
+            } else if (a_val.indexOf('RHSA-') != -1) {
+                // RHSA
+                generated = generated + "<a href=\"" + detailLink.rhn.url + a_val + ".html\" rel='noopener noreferrer' target='_blank'>" + a_val + '</a>';
+            } else if (a_val.indexOf('ELSA-') != -1) {
+                // ELSA
+                let elsa = a_val.trim().split(":");
+                generated = generated + "<a href=\"" + detailLink.oracleErrata.url + elsa[0] + ".html\" rel='noopener noreferrer' target='_blank'>" + elsa[0] + '</a>';
+            }
+            // TODO OVMSA
+
+            if (a < advisoryids.length - 1) {
+                generated = generated + "<br>";
+            }
+        });
+
+        $(this).text("").append(generated);
     });
 };
 
