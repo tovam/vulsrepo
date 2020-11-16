@@ -173,7 +173,7 @@ const getData = function() {
 
     var selectedFiles = getSelectedFile();
 
-    if (selectedFiles.length === 0) {
+    if (isCheckNull(selectedFiles) === true) {
         defer.reject("notSelect");
         return defer.promise();
     }
@@ -1071,7 +1071,7 @@ const getFixState = function(val) {
 
 const getServerName = function(data) {
     let servername = data.serverName;
-    if (data.warnings.length > 0) {
+    if (isCheckNull(data.warnings) === false) {
         servername = "[Warn] " + servername;
     }
     if (data.runningKernel.rebootRequired === true) {
@@ -1611,7 +1611,7 @@ const displayDetail = function(cveID) {
     }
 
     let v2Datasets = [];
-    if (radarData_nvd !== undefined && radarData_nvd.length > 0) {
+    if (isCheckNull(radarData_nvd) === false) {
         v2Datasets.push({
             label: "NVD",
             backgroundColor: "rgba(179,181,198,0.2)",
@@ -1624,7 +1624,7 @@ const displayDetail = function(cveID) {
             data: radarData_nvd
         });
     }
-    if (radarData_jvn !== undefined && radarData_jvn.length > 0) {
+    if (isCheckNull(radarData_jvn) === false) {
         v2Datasets.push({
             label: "JVN",
             backgroundColor: "rgba(255,99,132,0.2)",
@@ -1637,7 +1637,7 @@ const displayDetail = function(cveID) {
             data: radarData_jvn
         });
     }
-    if (radarData_redhatV2 !== undefined && radarData_redhatV2.length > 0) {
+    if (isCheckNull(radarData_redhatV2) === false) {
         v2Datasets.push({
             label: "RedHat",
             backgroundColor: "rgba(51,204,204,0.2)",
@@ -1669,7 +1669,7 @@ const displayDetail = function(cveID) {
     });
 
     let v3Datasets = [];
-    if (radarData_nvdV3 !== undefined && radarData_nvdV3.length > 0) {
+    if (isCheckNull(radarData_nvdV3) === false) {
         v3Datasets.push({
             label: "NVD " + radarData_nvdV3Ver,
             backgroundColor: "rgba(179,181,198,0.2)",
@@ -1682,7 +1682,7 @@ const displayDetail = function(cveID) {
             data: radarData_nvdV3
     });
     }
-    if (radarData_jvnV3 !== undefined && radarData_jvnV3.length > 0) {
+    if (isCheckNull(radarData_jvnV3) === false) {
         v3Datasets.push({
             label: "JVN " + radarData_jvnV3Ver,
             backgroundColor: "rgba(255,99,132,0.2)",
@@ -1695,7 +1695,7 @@ const displayDetail = function(cveID) {
             data: radarData_jvnV3
     });
     }
-    if (radarData_redhatV3 !== undefined && radarData_redhatV3.length > 0) {
+    if (isCheckNull(radarData_redhatV3) === false) {
         v3Datasets.push({
             label: "RedHat " + radarData_redhatV3Ver,
             backgroundColor: "rgba(102,102,255,0.2)",
