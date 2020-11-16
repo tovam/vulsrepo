@@ -419,6 +419,7 @@ const setEvents = function() {
     };
     initSwitch("chkPivotSummary");
     initSwitch("chkPivotCvss");
+    initSwitch("chkPivotProcess");
     initSwitch("chkCweTop25");
     initSwitch("chkOwaspTopTen2017");
     initSwitch("chkSansTop25");
@@ -562,6 +563,7 @@ const createPivotData = function(resultArray) {
     const prioltyFlag = db.get("vulsrepo_pivotPriority");
     const summaryFlag = db.get("vulsrepo_chkPivotSummary");
     const cvssFlag = db.get("vulsrepo_chkPivotCvss");
+    const processFlag = db.get("vulsrepo_chkPivotProcess");
     const cweTop25Flag = db.get("vulsrepo_chkCweTop25");
     const owaspTopTen2017Flag = db.get("vulsrepo_chkOwaspTopTen2017");
     const sansTop25Flag = db.get("vulsrepo_chkSansTop25");
@@ -811,18 +813,24 @@ const createPivotData = function(resultArray) {
                             result["NewPackageVer"] = "None";
                         }
                         result["Repository"] = pkgInfo.repository;
-                        result["PortScannable"] = "";
-                        if (pkgInfo.AffectedProcs !== undefined) {
-                            $.each(pkgInfo.AffectedProcs, function(a, a_val) {
-                                if (a_val.listenPorts !== undefined) {
-                                    $.each(a_val.listenPorts, function(l, l_val) {
-                                        if (isCheckNull(l_val.portScanSuccessOn) === false) {
-                                            result["PortScannable"] = "CHK-PortScannable-" + y_val.cveID + "," + x_val.scanTime + "," + x_val.data.serverName + "," + x_val.data.container.name + "," + pkgName;
-                                            return;
-                                        }
-                                    });
-                                }
-                            });
+                        if (processFlag !== "false") {
+                            result["PortScannable"] = "";
+                            result["Process"] = "";
+                            if (pkgInfo.AffectedProcs !== undefined) {
+                                let process = "";
+                                $.each(pkgInfo.AffectedProcs, function(a, a_val) {
+                                    process = process + a_val.pid + ":" + a_val.name + " ";
+                                    if (a_val.listenPorts !== undefined) {
+                                        $.each(a_val.listenPorts, function(l, l_val) {
+                                            if (isCheckNull(l_val.portScanSuccessOn) === false) {
+                                                result["PortScannable"] = "CHK-PortScannable-" + y_val.cveID + "," + x_val.scanTime + "," + x_val.data.serverName + "," + x_val.data.container.name + "," + pkgName;
+                                                return;
+                                            }
+                                        });
+                                    }
+                                });
+                                result["Process"] = "CHK-Process-" + y_val.cveID + "," + x_val.scanTime + "," + x_val.data.serverName + "," + x_val.data.container.name + "," + pkgName + "," + process;
+                            }
                         }
                     } else if (libInfo !== undefined) {
                         // === for library
@@ -830,14 +838,20 @@ const createPivotData = function(resultArray) {
                         result["NewPackageVer"] = "Unknown";
                         result["Changelog"] = "None";
                         result["Repository"] = ""
-                        result["PortScannable"] = "";
+                        if (processFlag !== "false") {
+                            result["PortScannable"] = "";
+                            result["Process"] = "";
+                        }
                     } else {
                         // ===for cpe
                         result["PackageVer"] = "Unknown";
                         result["NewPackageVer"] = "Unknown";
                         result["Changelog"] = "None";
                         result["Repository"] = ""
-                        result["PortScannable"] = "";
+                        if (processFlag !== "false") {
+                            result["PortScannable"] = "";
+                            result["Process"] = "";
+                        }
                     }
 
                     var getSummaryAndDate = function(target) {
@@ -1162,6 +1176,7 @@ const displayPivot = function(array) {
 
             $("#pivot_base").find("th:contains('healthy')").css("background-color", "lightskyblue");
             $("#pivot_base").find("th:contains('CveID')").css("minWidth", "110px");
+            $("#pivot_base").find("th:contains('CweID')").css("minWidth", "80px");
             $("#pivot_base").find("th:contains('AdvisoryID')").css("minWidth", "110px");
             $("#pivot_base").find("th:contains('Reboot Required')").css("color", "#da0b00");
             addAdvisoryIDLink();
@@ -1170,6 +1185,7 @@ const displayPivot = function(array) {
             addCweIDLink();
             addChangelogLink();
             addPortScannableLink();
+            addProcessLink();
         }
 
     };
@@ -1324,6 +1340,15 @@ const addPortScannableLink = function() {
     doms.each(function() {
         let changelogSearch = $(this).text().replace("CHK-PortScannable-", "").split(",");
         $(this).text("").append('<a href="#contents" class="lightbox" data-cveid="' + changelogSearch[0] + '" data-scantime="' + changelogSearch[1] + '" data-server="' + changelogSearch[2] + '" data-container="' + changelogSearch[3] + '" data-package="' + changelogSearch[4] + '">Scannable</a>');
+    });
+    addEventDisplayChangelog();
+};
+
+const addProcessLink = function() {
+    let doms = $("#pivot_base").find("th:contains('CHK-Process-')");
+    doms.each(function() {
+        let changelogSearch = $(this).text().replace("CHK-Process-", "").split(",");
+        $(this).text("").append('<a href="#contents" class="lightbox" data-cveid="' + changelogSearch[0] + '" data-scantime="' + changelogSearch[1] + '" data-server="' + changelogSearch[2] + '" data-container="' + changelogSearch[3] + '" data-package="' + changelogSearch[4] + '">' + changelogSearch[5] + '</a>');
     });
     addEventDisplayChangelog();
 };
