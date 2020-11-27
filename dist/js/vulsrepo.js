@@ -773,7 +773,7 @@ const createPivotData = function(resultArray) {
                     if (y_val.distroAdvisories !== undefined) {
                         let distroAdvisoriesIdStr = "";
                         for(var j = 0; j < y_val.distroAdvisories.length; j++) {
-                            distroAdvisoriesIdStr = distroAdvisoriesIdStr + y_val.distroAdvisories[j].advisoryID;
+                            distroAdvisoriesIdStr = distroAdvisoriesIdStr + y_val.distroAdvisories[j].advisoryID.trim();
                             if (j < y_val.distroAdvisories.length - 1) {
                                 distroAdvisoriesIdStr = distroAdvisoriesIdStr + ", ";
                             }
@@ -1087,7 +1087,7 @@ const displayPivot = function(array) {
     history.replaceState(null, null, new_url);
 
     var derivers = $.pivotUtilities.derivers;
-    var renderers = $.extend($.pivotUtilities.renderers, $.pivotUtilities.c3_renderers);
+    var renderers = $.extend($.pivotUtilities.renderers, $.pivotUtilities.c3_renderers, $.pivotUtilities.export_renderers);
     var dateFormat = $.pivotUtilities.derivers.dateFormat;
     var sortAs = $.pivotUtilities.sortAs;
     var naturalSort = $.pivotUtilities.naturalSort;
@@ -1151,6 +1151,20 @@ const displayPivot = function(array) {
         },
         onRefresh: function(config) {
             db.set("vulsrepo_pivot_conf_tmp", config);
+            if (config.rendererName === "TSV Export") {
+                let replaceAll = function(str, before, after) {
+                    return str.split(before).join(after);
+                };
+                let tsv = $("#pivot_base").find("textarea").text();
+                tsv = replaceAll(tsv, "CHK-cweid-", "");
+                tsv = replaceAll(tsv, "CHK-cveid-", "");
+                tsv = replaceAll(tsv, "CHK-CERT-", "");
+                tsv = replaceAll(tsv, "CHK-advisoryid-", "");
+                tsv = tsv.replace(/CHK-changelog-.*?"/g, 'Changelog"')
+                tsv = tsv.replace(/CHK-PortScannable-.*?"/g, 'Scannable"')
+                tsv = tsv.replace(/"CHK-Process-.*?,.*?,.*?,.*?,.*?,(.+?)"/g, '"$1"');
+                $("#pivot_base").find("textarea").text(tsv);
+            }
             $("#pivot_base").find(".pvtVal[data-value='null']").css("background-color", "#b2f3b2");
 
             let cvsss = ["Unknown", "Critical", "High", "Medium", "Low", "Important", "Moderate", "Negligible", "Unimportant", "Pending", "Not Vulnerable"];
