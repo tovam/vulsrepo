@@ -75,10 +75,16 @@
             }
           }).join("\t") + "\n";
         }
-        return $("<textarea>").text(text).css({
+        textarea = $("<textarea>").text(text).css({
           width: ($(window).width() / 2) + "px",
           height: ($(window).height() / 2) + "px"
         });
+        download = $("<button>").text("Download TSV").attr("id","download_tsv");
+        div = $("<div>");
+        div.append(textarea);
+        div.append("</br>");
+        div.append(download);
+        return div;
       }
     };
   });

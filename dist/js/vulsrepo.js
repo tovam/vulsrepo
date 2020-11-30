@@ -1164,6 +1164,22 @@ const displayPivot = function(array) {
                 tsv = tsv.replace(/CHK-PortScannable-.*?"/g, 'Scannable"')
                 tsv = tsv.replace(/"CHK-Process-.*?,.*?,.*?,.*?,.*?,(.+?)"/g, '"$1"');
                 $("#pivot_base").find("textarea").text(tsv);
+
+                $("#download_tsv").addClass("btn btn-default");
+                $("#download_tsv").click(function() {
+                    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+                    const url = URL.createObjectURL(new Blob([bom, tsv], {'type': 'text/tab-separated-values'}));
+                    const a = document.createElement("a");
+                    document.body.appendChild(a);
+                    const rightNow = new Date();
+                    // yyyy-mm-dd hh-mm-ss
+                    const filename = "vulsrepo-" + rightNow.toLocaleString().replace(/\//g, "-").replace(/:/g, "-");
+                    a.download = filename + '.tsv';
+                    a.href = url;
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                });
             }
             $("#pivot_base").find(".pvtVal[data-value='null']").css("background-color", "#b2f3b2");
 
