@@ -85,6 +85,7 @@ const initPivotTable = function() {
         displayPivot(vulsrepo.detailPivotData);
         setPulldown("#drop_topmenu", true);
         setPulldownDisplayChangeEvent("#drop_topmenu");
+        $("#open_print_preview").show();
         $.unblockUI(blockUIoption);
     }, 500);
 };
@@ -383,6 +384,21 @@ const setEvents = function() {
         $("#drop_topnemu_hiddenValue").val("");
         fadeAlert("#alert_pivot_conf");
         initPivotTable();
+    });
+
+    $("#open_print_preview").click(function() {
+        let data = $("#pivot_base").clone();
+        data.find("tr")[0].remove(); // remove pivot table row header
+        data.find("td")[0].remove(); // remove pivot table left column header
+        data.find("td")[0].remove(); // remove pivot table right column header
+        // make print preview page from template
+        let template = document.querySelector('#preview-window-template').cloneNode(true);
+        // set data
+        $(template.content).find('#preview').append(data);
+        // open preview window
+        var previewWnd = window.open('', '', 'width=1280, height=720, scrollbar, resizable');
+        previewWnd.document.write(template.innerHTML);
+        previewWnd.document.close();
     });
 
     // ---detail cveid
