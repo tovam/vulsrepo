@@ -387,19 +387,19 @@ const setEvents = function() {
     });
 
     $("#open_print_preview").click(function() {
-        let data = $("#pivot_base").clone();
+        const data = $("#pivot_base").clone();
         data.find("tr")[0].remove(); // remove pivot table row header
         data.find("td")[0].remove(); // remove pivot table left column header
         data.find("td")[0].remove(); // remove pivot table right column header
         // make print preview page from template
-        let template = document.querySelector('#preview-window-template').cloneNode(true);
+        const template = document.querySelector('#preview-window-template').cloneNode(true);
         // set data
         $(template.content).find('#preview').append(data);
-        let rendererArea = $("#pivot_base").find(".pvtRendererArea").eq(0).find("*:first-child");
-        let width = rendererArea.outerWidth(true) + 60; // plus pivot_base margin
-        let height = rendererArea.outerHeight(true) + 60 + 51; // plus pivot_base margin, navbar margin
+        const rendererArea = $("#pivot_base").find(".pvtRendererArea").eq(0).find("*:first-child");
+        const width = rendererArea.outerWidth(true) + 60; // plus pivot_base margin
+        const height = rendererArea.outerHeight(true) + 60 + 51; // plus pivot_base margin, navbar margin
         // open preview window
-        var previewWnd = window.open('', '', 'width=' +  width + ', height=' + height + ', scrollbar, resizable');
+        const previewWnd = window.open('', '', 'width=' +  width + ', height=' + height + ', scrollbar, resizable');
         previewWnd.document.write(template.innerHTML);
         previewWnd.document.close();
     });
