@@ -588,6 +588,7 @@ const createPivotData = function(resultArray) {
                 "Title": "healthy",
                 "Summary": "healthy",
                 "CVSS Score": "healthy",
+                "CVSS Score Type": "healthy",
                 "CVSS Severity": "healthy",
                 "CVSSv3 (AV)": "healthy",
                 "CVSSv3 (AC)": "healthy",
@@ -611,6 +612,7 @@ const createPivotData = function(resultArray) {
                 "DetectionMethod": "healthy",
                 "ConfidenceScore": "healthy",
                 "PortScannable": "healthy",
+                "Process": "healthy",
                 "Published": "healthy",
                 "Last Modified": "healthy",
             };
