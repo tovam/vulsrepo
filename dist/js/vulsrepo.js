@@ -85,6 +85,7 @@ const initPivotTable = function() {
         displayPivot(vulsrepo.detailPivotData);
         setPulldown("#drop_topmenu", true);
         setPulldownDisplayChangeEvent("#drop_topmenu");
+        $("#open_print_preview").show();
         $.unblockUI(blockUIoption);
     }, 500);
 };
@@ -383,6 +384,24 @@ const setEvents = function() {
         $("#drop_topnemu_hiddenValue").val("");
         fadeAlert("#alert_pivot_conf");
         initPivotTable();
+    });
+
+    $("#open_print_preview").click(function() {
+        const data = $("#pivot_base").clone();
+        data.find("tr")[0].remove(); // remove pivot table row header
+        data.find("td")[0].remove(); // remove pivot table left column header
+        data.find("td")[0].remove(); // remove pivot table right column header
+        // make print preview page from template
+        const template = document.querySelector('#preview-window-template').cloneNode(true);
+        // set data
+        $(template.content).find('#preview').append(data);
+        const rendererArea = $("#pivot_base").find(".pvtRendererArea").eq(0).find("*:first-child");
+        const width = rendererArea.outerWidth(true) + 60; // plus pivot_base margin
+        const height = rendererArea.outerHeight(true) + 60 + 51; // plus pivot_base margin, navbar margin
+        // open preview window
+        const previewWnd = window.open('', '', 'width=' +  width + ', height=' + height + ', scrollbar, resizable');
+        previewWnd.document.write(template.innerHTML);
+        previewWnd.document.close();
     });
 
     // ---detail cveid
@@ -775,7 +794,7 @@ const createPivotData = function(resultArray) {
                     if (y_val.distroAdvisories !== undefined) {
                         let distroAdvisoriesIdStr = "";
                         for(var j = 0; j < y_val.distroAdvisories.length; j++) {
-                            distroAdvisoriesIdStr = distroAdvisoriesIdStr + y_val.distroAdvisories[j].advisoryID;
+                            distroAdvisoriesIdStr = distroAdvisoriesIdStr + y_val.distroAdvisories[j].advisoryID.trim();
                             if (j < y_val.distroAdvisories.length - 1) {
                                 distroAdvisoriesIdStr = distroAdvisoriesIdStr + ", ";
                             }
@@ -1089,7 +1108,7 @@ const displayPivot = function(array) {
     history.replaceState(null, null, new_url);
 
     var derivers = $.pivotUtilities.derivers;
-    var renderers = $.extend($.pivotUtilities.renderers, $.pivotUtilities.c3_renderers);
+    var renderers = $.extend($.pivotUtilities.renderers, $.pivotUtilities.c3_renderers, $.pivotUtilities.export_renderers);
     var dateFormat = $.pivotUtilities.derivers.dateFormat;
     var sortAs = $.pivotUtilities.sortAs;
     var naturalSort = $.pivotUtilities.naturalSort;
@@ -1153,6 +1172,36 @@ const displayPivot = function(array) {
         },
         onRefresh: function(config) {
             db.set("vulsrepo_pivot_conf_tmp", config);
+            if (config.rendererName === "TSV Export") {
+                let replaceAll = function(str, before, after) {
+                    return str.split(before).join(after);
+                };
+                let tsv = $("#pivot_base").find("textarea").text();
+                tsv = replaceAll(tsv, "CHK-cweid-", "");
+                tsv = replaceAll(tsv, "CHK-cveid-", "");
+                tsv = replaceAll(tsv, "CHK-CERT-", "");
+                tsv = replaceAll(tsv, "CHK-advisoryid-", "");
+                tsv = tsv.replace(/CHK-changelog-.*?"/g, 'Changelog"')
+                tsv = tsv.replace(/CHK-PortScannable-.*?"/g, 'Scannable"')
+                tsv = tsv.replace(/"CHK-Process-.*?,.*?,.*?,.*?,.*?,(.+?)"/g, '"$1"');
+                $("#pivot_base").find("textarea").text(tsv);
+
+                $("#download_tsv").addClass("btn btn-default");
+                $("#download_tsv").click(function() {
+                    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+                    const url = URL.createObjectURL(new Blob([bom, tsv], {'type': 'text/tab-separated-values'}));
+                    const a = document.createElement("a");
+                    document.body.appendChild(a);
+                    const rightNow = new Date();
+                    // yyyy-mm-dd hh-mm-ss
+                    const filename = "vulsrepo-" + rightNow.toLocaleString().replace(/\//g, "-").replace(/:/g, "-");
+                    a.download = filename + '.tsv';
+                    a.href = url;
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                });
+            }
             $("#pivot_base").find(".pvtVal[data-value='null']").css("background-color", "#b2f3b2");
 
             let cvsss = ["Unknown", "Critical", "High", "Medium", "Low", "Important", "Moderate", "Negligible", "Unimportant", "Pending", "Not Vulnerable"];
