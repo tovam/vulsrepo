@@ -395,8 +395,11 @@ const setEvents = function() {
         let template = document.querySelector('#preview-window-template').cloneNode(true);
         // set data
         $(template.content).find('#preview').append(data);
+        let rendererArea = $("#pivot_base").find(".pvtRendererArea").eq(0).find("*:first-child");
+        let width = rendererArea.outerWidth(true) + 60; // plus pivot_base margin
+        let height = rendererArea.outerHeight(true) + 60 + 51; // plus pivot_base margin, navbar margin
         // open preview window
-        var previewWnd = window.open('', '', 'width=1280, height=720, scrollbar, resizable');
+        var previewWnd = window.open('', '', 'width=' +  width + ', height=' + height + ', scrollbar, resizable');
         previewWnd.document.write(template.innerHTML);
         previewWnd.document.close();
     });
