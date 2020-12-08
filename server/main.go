@@ -118,14 +118,14 @@ func startServer() {
 		http.HandleFunc("/results/", handleFileServer(config.Server.ResultsPath, "/results/"))
 		http.HandleFunc("/getfilelist/", accessDirect)
 	}
-	if config.Server.ServerSSL == "yes" {    
-		log.Println("Start: SSL Listening port: " + config.Server.ServerIP+":"+config.Server.ServerPort)
+	if config.Server.ServerSSL == "yes" {
+		log.Println("Start: SSL Listening port: " + config.Server.ServerIP + ":" + config.Server.ServerPort)
 		err := http.ListenAndServeTLS(config.Server.ServerIP+":"+config.Server.ServerPort, config.Server.ServerCert, config.Server.ServerKey, nil)
 		if err != nil {
 			log.Fatal("Error: ListenAndServeTLS: ", err)
 		}
 	} else {
-		log.Println("Start: Listening port: " + config.Server.ServerIP+":"+config.Server.ServerPort)
+		log.Println("Start: Listening port: " + config.Server.ServerIP + ":" + config.Server.ServerPort)
 		err := http.ListenAndServe(config.Server.ServerIP+":"+config.Server.ServerPort, nil)
 		if err != nil {
 			log.Fatal("Error: ListenAndServe: ", err)
@@ -153,6 +153,7 @@ func pathChk() {
 		log.Println("INFO: RootPath Load: ", config.Server.RootPath)
 	}
 
+	config.Server.ResultsPath = strings.TrimSuffix(config.Server.ResultsPath, "/")
 	if _, err := os.Stat(config.Server.ResultsPath); err != nil {
 		log.Println("Error: ResultsPath not access: ", err)
 		flag = true
@@ -169,22 +170,21 @@ func pathChk() {
 		}
 	}
 
-        if config.Server.ServerSSL == "yes" {
-                if _, err := os.Stat(config.Server.ServerCert); err != nil {
-                        log.Println("Error: serverCertPath not access: ", config.Server.ServerCert)
-                        flag = true
-                } else {
-                        log.Println("INFO: serverCertPath Load: ", config.Server.ServerCert)
-                }
+	if config.Server.ServerSSL == "yes" {
+		if _, err := os.Stat(config.Server.ServerCert); err != nil {
+			log.Println("Error: serverCertPath not access: ", config.Server.ServerCert)
+			flag = true
+		} else {
+			log.Println("INFO: serverCertPath Load: ", config.Server.ServerCert)
+		}
 
-                if _, err := os.Stat(config.Server.ServerKey); err != nil {
-                        log.Println("Error: serverKeyPath not access: ", config.Server.ServerKey)
-                        flag = true
-                } else {
-                        log.Println("INFO: serverKeyPath Load: ", config.Server.ServerKey)
-                }
-        }
-
+		if _, err := os.Stat(config.Server.ServerKey); err != nil {
+			log.Println("Error: serverKeyPath not access: ", config.Server.ServerKey)
+			flag = true
+		} else {
+			log.Println("INFO: serverKeyPath Load: ", config.Server.ServerKey)
+		}
+	}
 
 	if flag == true {
 		log.Fatal("Error: Please see if the config setting is correct")
