@@ -26,6 +26,10 @@
     <link href="plugins/datatables/datatables.min.css" rel="stylesheet" type="text/css" />
     <!-- colorbox.js -->
     <link href="plugins/colorbox/colorbox.css" rel="stylesheet" type="text/css" />
+    <!-- daterangepicker.js -->
+    <link href="plugins/daterangepicker/daterangepicker.css" rel="stylesheet" type="text/css" />
+    <!-- slimselect.js -->
+    <link href="plugins/slim-select/slimselect.min.css" rel="stylesheet" type="text/css" />
     <!-- main -->
     <link href="dist/css/index.css" rel="stylesheet" type="text/css" />
 
@@ -46,6 +50,14 @@
                     <button type="submit" class="btn btn-primary my-button submitSelectfile">
 						Submit
 					</button>
+                </div>
+                <div>
+                    <input type="text" id="targetRange" class="form-control" placeholder="Select date range"></input>
+                </div>
+                <div>
+                    <select id="targetServer" multiple>
+                        <option data-placeholder="true"></option>
+                    </select>
                 </div>
                 <div>
                     <p>
@@ -733,6 +745,11 @@
 <script src="plugins/jquery.collapser.js/jquery.collapser.min.js" type="text/javascript"></script>
 <script src="plugins/Chart.js/Chart.min.js" type="text/javascript"></script>
 
+<!-- daterangepicker.js -->
+<script src="plugins/daterangepicker/moment.min.js" type="text/javascript"></script>
+<script src="plugins/daterangepicker/daterangepicker.js" type="text/javascript"></script>
+<!-- slimselect.js -->
+<script src="plugins/slim-select/slimselect.min.js" type="text/javascript"></script>
 <!-- main -->
 <script src="dist/js/vulsrepo_param.js" type="text/javascript"></script>
 <script src="dist/js/vulsrepo_common.js" type="text/javascript"></script>

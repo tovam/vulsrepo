@@ -394,3 +394,7 @@ body.noscroll {
 .font-size-small {
     font-size: 90%;
 }
+
+.ss-content .ss-list {
+    max-height: 720px !important;
+}

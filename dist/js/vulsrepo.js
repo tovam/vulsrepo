@@ -542,6 +542,75 @@ const createFolderTree = function() {
         target = "getfilelist/"
     }
 
+    let initDateRangePicker = function(timtstamps) {
+        $('#targetRange').daterangepicker({
+            autoUpdateInput: false,
+            locale: {
+                format: "YYYY-MM-DD",
+                cancelLabel: 'Clear'
+            },
+            ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            },
+        }, function(start, end, label) {
+            console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+        });
+        $('#targetRange').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+        });
+        $('#targetRange').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+    };
+
+    let initServerSelector = function(servers) {
+        $("#targetServer").append('<option value="Select All">Select All</option>');
+        $("#targetServer").append('<option value="Select None">Select None</option>');
+        servers.forEach(server => {
+            $("#targetServer").append('<option value="' + server + '">' + server + '</option>');
+        });
+
+        var slimselect = new SlimSelect({
+            select: '#targetServer',
+            placeholder: 'Select server/container',
+            allowDeselectOption: true,
+            closeOnSelect: false,
+            onChange: (info) => {
+                console.log(info);
+                var curData = slimselect.data.data;
+                var selected_count = info.length;
+                var has_deselect_button = curData.filter(v => v.value === '' || v.value === 'Select None').length > 0;
+                var wants_deselect = slimselect.selected().includes("Select None");
+                var wants_allselect = slimselect.selected().includes("Select All");
+
+                if (wants_deselect) {
+                    slimselect.set([]);
+                    //slimselect.setData(curData.filter(v => v.value !== '' && v.value !== 'Select None' ));
+                    return;
+                }
+                if (wants_allselect) {
+                    let alldata = curData.slice();
+                    let values = curData.slice().map(cur => cur.value);
+                    values.shift();
+                    values.shift();
+                    values.shift();
+                    slimselect.set(values);
+                    return;
+                }
+
+                if (selected_count && !has_deselect_button) {
+                    //curData.unshift({value: "", text: "Select None"});
+                    //slimselect.setData(curData);
+                }
+            }
+        });
+    };
+
     var tree = $("#folderTree").dynatree({
         initAjax: {
             url: target
@@ -550,6 +619,21 @@ const createFolderTree = function() {
             cache: false,
             timeout: 120000,
             dataType: "json"
+        },
+        onPostInit: function(isReloading, isError) {
+            console.log("onPostInit=" + isReloading + " " + isError);
+            let timestamps = [];
+            let servers = [];
+            $("#folderTree").dynatree("getRoot").visit(function(node){
+                if (node.getLevel() === 1) {
+                    timestamps.push();
+                } else if (node.getLevel() === 2) {
+                    servers.push(node.data.title);
+                }
+            });
+
+            initDateRangePicker(new Set(timestamps));
+            initServerSelector(Array.from(new Set(servers)).sort());
         },
         minExpandLevel: 1,
         persist: false,
@@ -563,6 +647,7 @@ const createFolderTree = function() {
         noLink: false,
         debugLevel: 0
     });
+
 };
 
 const isCheckNull = function(o) {
