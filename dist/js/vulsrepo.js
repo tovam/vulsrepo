@@ -533,6 +533,41 @@ const setEvents = function() {
 
 };
 
+const selectTreeItem = function() {
+    // get date range
+    let range = $('#targetRange').data('daterangepicker');
+    let startDate = range.startDate.clone();
+    let endDate = range.endDate.clone().add('d', 1);
+
+    // get server/container(s)
+    var slimselect = document.querySelector("#targetServer").slim.selected();
+
+    $("#folderTree").dynatree("getRoot").visit(function(node) {
+        if (node.getLevel() === 1) {
+            // compare scantime, startDate, endDate
+            let scantime = moment(node.data.title);
+            if (scantime.isSameOrAfter(startDate) === true && scantime.isBefore(endDate) === true) {
+                if (isCheckNull(node.childList) === false) {
+                    node.childList.forEach(child => {
+                        if (slimselect.includes(child.data.title) === true) {
+                            child.select(true);
+                        } else {
+                            child.select(false);
+                        }
+                    });
+                }
+            } else {
+                // out of range date
+                if (isCheckNull(node.childList) === false) {
+                    node.childList.forEach(child => {
+                        child.select(false);
+                    });
+                }
+            }
+        }
+    });
+};
+
 const createFolderTree = function() {
 
     var target;
@@ -543,11 +578,12 @@ const createFolderTree = function() {
     }
 
     let initDateRangePicker = function(timtstamps) {
+        let start = timtstamps.shift();
+        let end = timtstamps.pop();
+
         $('#targetRange').daterangepicker({
-            autoUpdateInput: false,
             locale: {
-                format: "YYYY-MM-DD",
-                cancelLabel: 'Clear'
+                format: "YYYY-MM-DD"
             },
             ranges: {
                 'Today': [moment(), moment()],
@@ -555,58 +591,44 @@ const createFolderTree = function() {
                 'Last 7 Days': [moment().subtract(6, 'days'), moment()],
                 'Last 30 Days': [moment().subtract(29, 'days'), moment()],
                 'This Month': [moment().startOf('month'), moment().endOf('month')],
-                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                'All Days': [moment(start), moment(end)]
             },
         }, function(start, end, label) {
-            console.log("A new date selection was made: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
-        });
-        $('#targetRange').on('apply.daterangepicker', function(ev, picker) {
-            $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
-        });
-        $('#targetRange').on('cancel.daterangepicker', function(ev, picker) {
-            $(this).val('');
+            selectTreeItem();
         });
     };
 
     let initServerSelector = function(servers) {
-        $("#targetServer").append('<option value="Select All">Select All</option>');
-        $("#targetServer").append('<option value="Select None">Select None</option>');
+        $("#targetServer").append('<option value="Select All" class="btn btn-default btn-block">Select All</option>');
+        $("#targetServer").append('<option value="Select None" class="btn btn-default btn-block">Select None</option>');
         servers.forEach(server => {
             $("#targetServer").append('<option value="' + server + '">' + server + '</option>');
         });
 
         var slimselect = new SlimSelect({
             select: '#targetServer',
-            placeholder: 'Select server/container',
+            placeholder: 'Select server/container(s)',
             allowDeselectOption: true,
             closeOnSelect: false,
             onChange: (info) => {
-                console.log(info);
                 var curData = slimselect.data.data;
-                var selected_count = info.length;
-                var has_deselect_button = curData.filter(v => v.value === '' || v.value === 'Select None').length > 0;
                 var wants_deselect = slimselect.selected().includes("Select None");
                 var wants_allselect = slimselect.selected().includes("Select All");
-
                 if (wants_deselect) {
+                    // select none
                     slimselect.set([]);
-                    //slimselect.setData(curData.filter(v => v.value !== '' && v.value !== 'Select None' ));
                     return;
-                }
-                if (wants_allselect) {
-                    let alldata = curData.slice();
+                } else if (wants_allselect) {
+                    // select all
                     let values = curData.slice().map(cur => cur.value);
-                    values.shift();
-                    values.shift();
-                    values.shift();
+                    values.shift(); // remove ""
+                    values.shift(); // remove "Select All"
+                    values.shift(); // remove "Select None"
                     slimselect.set(values);
                     return;
                 }
-
-                if (selected_count && !has_deselect_button) {
-                    //curData.unshift({value: "", text: "Select None"});
-                    //slimselect.setData(curData);
-                }
+                selectTreeItem();
             }
         });
     };
@@ -626,13 +648,16 @@ const createFolderTree = function() {
             let servers = [];
             $("#folderTree").dynatree("getRoot").visit(function(node){
                 if (node.getLevel() === 1) {
-                    timestamps.push();
+                    // remove "loading" indicate
+                    if ("Loading&#8230;" !== node.data.title) {
+                        timestamps.push(node.data.title);
+                    }
                 } else if (node.getLevel() === 2) {
                     servers.push(node.data.title);
                 }
             });
 
-            initDateRangePicker(new Set(timestamps));
+            initDateRangePicker(Array.from(new Set(timestamps)).sort());
             initServerSelector(Array.from(new Set(servers)).sort());
         },
         minExpandLevel: 1,

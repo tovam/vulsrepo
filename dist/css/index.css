@@ -398,3 +398,8 @@ body.noscroll {
 .ss-content .ss-list {
     max-height: 720px !important;
 }
+
+.ss-disabled {
+    padding-left: 8px !important;
+    color: #a9a9a9 !important;
+}
