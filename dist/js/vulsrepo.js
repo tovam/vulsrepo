@@ -611,21 +611,32 @@ const createFolderTree = function() {
             placeholder: 'Select server/container(s)',
             allowDeselectOption: true,
             closeOnSelect: false,
+            searchFilter: (option, search) => {
+                if (option.text === "Select All" || option.text === "Select None") {
+                    return true;
+                }
+                return option.text.toLowerCase().indexOf(search.toLowerCase()) !== -1;
+            },
             onChange: (info) => {
-                var curData = slimselect.data.data;
-                var wants_deselect = slimselect.selected().includes("Select None");
-                var wants_allselect = slimselect.selected().includes("Select All");
+                let curData = slimselect.data.filtered;
+                if (isCheckNull(curData) === true) {
+                    curData = slimselect.data.data;
+                }
+                let wants_deselect = slimselect.selected().includes("Select None");
+                let wants_allselect = slimselect.selected().includes("Select All");
                 if (wants_deselect) {
                     // select none
-                    slimselect.set([]);
+                    let exclude = ["", "Select None", "Select All"];
+                    exclude.push(...curData.slice().map(cur => cur.value));
+                    let values = slimselect.selected().slice().filter(val => !exclude.includes(val));
+                    slimselect.set(values);
                     return;
                 } else if (wants_allselect) {
                     // select all
+                    let exclude = ["", "Select None", "Select All"];
                     let values = curData.slice().map(cur => cur.value);
-                    values.shift(); // remove ""
-                    values.shift(); // remove "Select All"
-                    values.shift(); // remove "Select None"
-                    slimselect.set(values);
+                    values.push(...slimselect.selected().slice());
+                    slimselect.set(Array.from(new Set(values.filter(val => !exclude.includes(val)))));
                     return;
                 }
                 selectTreeItem();
