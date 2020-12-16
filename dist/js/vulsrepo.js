@@ -582,6 +582,9 @@ const createFolderTree = function() {
         let end = timtstamps.pop();
 
         $('#targetRange').daterangepicker({
+            startDate: moment(end),
+            endDate: moment(end),
+            autoApply: true,
             locale: {
                 format: "YYYY-MM-DD"
             },
@@ -595,8 +598,10 @@ const createFolderTree = function() {
                 'All Days': [moment(start), moment(end)]
             },
         }, function(start, end, label) {
+            $('#targetRange span').html(start.format('YYYY-MM-DD') + ' - ' + end.format('YYYY-MM-DD'));
             selectTreeItem();
         });
+        $('#targetRange span').html(moment(end).format('YYYY-MM-DD') + ' - ' + moment(end).format('YYYY-MM-DD'));
     };
 
     let initServerSelector = function(servers) {
