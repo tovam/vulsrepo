@@ -577,9 +577,13 @@ const createFolderTree = function() {
         target = "getfilelist/"
     }
 
-    let initDateRangePicker = function(timtstamps) {
-        let start = timtstamps.shift();
-        let end = timtstamps.pop();
+    let initDateRangePicker = function(timestamps) {
+        let start = moment().toISOString();
+        let end = moment().toISOString();
+        if (isCheckNull(timestamps) === false) {
+            start = timestamps[0];
+            end = timestamps[timestamps.length - 1];
+        }
 
         $('#targetRange').daterangepicker({
             startDate: moment(end),
@@ -604,7 +608,7 @@ const createFolderTree = function() {
         $('#targetRange span').html(moment(end).format('YYYY-MM-DD') + ' - ' + moment(end).format('YYYY-MM-DD'));
     };
 
-    let initServerSelector = function(servers) {
+    let initServerSelector = function(lastServers, servers) {
         $("#targetServer").append('<option value="Select All" class="btn btn-default btn-block">Select All</option>');
         $("#targetServer").append('<option value="Select None" class="btn btn-default btn-block">Select None</option>');
         servers.forEach(server => {
@@ -647,6 +651,8 @@ const createFolderTree = function() {
                 selectTreeItem();
             }
         });
+        // set latest servers
+        slimselect.set(lastServers);
     };
 
     var tree = $("#folderTree").dynatree({
@@ -659,22 +665,27 @@ const createFolderTree = function() {
             dataType: "json"
         },
         onPostInit: function(isReloading, isError) {
-            console.log("onPostInit=" + isReloading + " " + isError);
-            let timestamps = [];
-            let servers = [];
+            let timestamps = new Set();
+            let servers = new Set();
+            let lastFolderId = "";
             $("#folderTree").dynatree("getRoot").visit(function(node){
                 if (node.getLevel() === 1) {
-                    // remove "loading" indicate
-                    if ("Loading&#8230;" !== node.data.title) {
-                        timestamps.push(node.data.title);
+                    // remove "Loading", "Load error!" indicate
+                    if ("Loading&#8230;" !== node.data.title && "Load error!" !== node.data.title) {
+                        timestamps.add(node.data.title);
+                        lastFolderId = node.data.key;
                     }
                 } else if (node.getLevel() === 2) {
-                    servers.push(node.data.title);
+                    servers.add(node.data.title);
                 }
             });
-
-            initDateRangePicker(Array.from(new Set(timestamps)).sort());
-            initServerSelector(Array.from(new Set(servers)).sort());
+            initDateRangePicker(Array.from(timestamps).sort());
+            let lastNode = $("#folderTree").dynatree("getTree").getNodeByKey(lastFolderId);
+            let lastServers = [];
+            if (isCheckNull(lastNode) === false) {
+                lastServers = lastNode.childList.map(child => child.data.title);
+            }
+            initServerSelector(lastServers, Array.from(servers).sort());
         },
         minExpandLevel: 1,
         persist: false,
