@@ -270,6 +270,10 @@ const isDefaultFilter = function(val) {
     return result;
 };
 
+const setDateRangePickerHTML = function(start, end) {
+    $('#targetRange span').html(start.format('YYYY-MM-DD') + ' - ' + end.format('YYYY-MM-DD'));
+};
+
 const setEvents = function() {
 
     // ---file select
@@ -279,16 +283,29 @@ const setEvents = function() {
     });
 
     $("#btnSelectAll").click(function() {
-        $("#folderTree").dynatree("getRoot").visit(function(node) {
-            node.select(true);
-        });
+        // set all days
+        let range = $('#targetRange').data('daterangepicker');
+        range.setStartDate(range.minDate);
+        range.setEndDate(range.maxDate);
+        setDateRangePickerHTML(range.startDate, range.endDate);
+        // set all server/container(s)
+        let slimselect = document.querySelector("#targetServer").slim;
+        let curData = slimselect.data.data;
+        let exclude = ["", "Select None", "Select All"];
+        let values = curData.slice().map(cur => cur.value);
+        slimselect.set(values.filter(val => !exclude.includes(val)));
         return false;
     });
 
     $("#btnDeselectAll").click(function() {
-        $("#folderTree").dynatree("getRoot").visit(function(node) {
-            node.select(false);
-        });
+        // set latest day
+        let range = $('#targetRange').data('daterangepicker');
+        range.setStartDate(range.maxDate);
+        range.setEndDate(range.maxDate);
+        setDateRangePickerHTML(range.startDate, range.endDate);
+        // clear server/container(s)
+        let slimselect = document.querySelector("#targetServer").slim;
+        slimselect.set([]);
         return false;
     });
 
@@ -540,7 +557,7 @@ const selectTreeItem = function() {
     let endDate = range.endDate.clone().add('d', 1);
 
     // get server/container(s)
-    var slimselect = document.querySelector("#targetServer").slim.selected();
+    let slimselect = document.querySelector("#targetServer").slim.selected();
 
     $("#folderTree").dynatree("getRoot").visit(function(node) {
         if (node.getLevel() === 1) {
@@ -586,6 +603,8 @@ const createFolderTree = function() {
         }
 
         $('#targetRange').daterangepicker({
+            minDate: moment(start),
+            maxDate: moment(end),
             startDate: moment(end),
             endDate: moment(end),
             autoApply: true,
@@ -602,10 +621,11 @@ const createFolderTree = function() {
                 'All Days': [moment(start), moment(end)]
             },
         }, function(start, end, label) {
-            $('#targetRange span').html(start.format('YYYY-MM-DD') + ' - ' + end.format('YYYY-MM-DD'));
+            setDateRangePickerHTML(start, end);
             selectTreeItem();
         });
-        $('#targetRange span').html(moment(end).format('YYYY-MM-DD') + ' - ' + moment(end).format('YYYY-MM-DD'));
+        // set latest day
+        setDateRangePickerHTML(moment(end), moment(end));
     };
 
     let initServerSelector = function(lastServers, servers) {
@@ -682,7 +702,7 @@ const createFolderTree = function() {
             initDateRangePicker(Array.from(timestamps).sort());
             let lastNode = $("#folderTree").dynatree("getTree").getNodeByKey(lastFolderId);
             let lastServers = [];
-            if (isCheckNull(lastNode) === false) {
+            if (isCheckNull(lastNode) === false && isCheckNull(lastNode.childList) === false) {
                 lastServers = lastNode.childList.map(child => child.data.title);
             }
             initServerSelector(lastServers, Array.from(servers).sort());
