@@ -554,16 +554,18 @@ const selectTreeItem = function() {
     // get date range
     let range = $('#targetRange').data('daterangepicker');
     let startDate = range.startDate.clone();
-    let endDate = range.endDate.clone().add('d', 1);
+    let endDate = range.endDate.clone();
 
     // get server/container(s)
     let slimselect = document.querySelector("#targetServer").slim.selected();
 
     $("#folderTree").dynatree("getRoot").visit(function(node) {
         if (node.getLevel() === 1) {
-            // compare scantime, startDate, endDate
-            let scantime = moment(node.data.title);
-            if (scantime.isSameOrAfter(startDate) === true && scantime.isBefore(endDate) === true) {
+            // compare YYYY-MM-DD scantime, startDate, endDate
+            let scantime = node.data.title.substring(0, 10);
+            let start = startDate.format().substring(0, 10);
+            let end = endDate.format().substring(0, 10);
+            if (start <= scantime && scantime <= end) {
                 if (isCheckNull(node.childList) === false) {
                     node.childList.forEach(child => {
                         if (slimselect.includes(child.data.title) === true) {
