@@ -691,7 +691,7 @@ const createFolderTree = function() {
             $("#folderTree").dynatree("getRoot").visit(function(node){
                 if (node.getLevel() === 1) {
                     // remove "Loading", "Load error!" indicate
-                    if ("Loading&#8230;" !== node.data.title && "Load error!" !== node.data.title) {
+                    if ("Loading&#8230;" !== node.data.title && node.data.title.indexOf("Load error!") === -1 ) {
                         timestamps.add(node.data.title);
                         lastFolderId = node.data.key;
                     }
