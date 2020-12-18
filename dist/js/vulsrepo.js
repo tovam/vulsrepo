@@ -689,25 +689,37 @@ const createFolderTree = function() {
         onPostInit: function(isReloading, isError) {
             let timestamps = new Set();
             let servers = new Set();
-            let lastFolderId = "";
+            let folderIds = [];
             $("#folderTree").dynatree("getRoot").visit(function(node){
                 if (node.getLevel() === 1) {
                     // remove "Loading", "Load error!" indicate
                     if ("Loading&#8230;" !== node.data.title && node.data.title.indexOf("Load error!") === -1 ) {
                         timestamps.add(node.data.title);
-                        lastFolderId = node.data.key;
+                        folderIds.push(node.data.key);
                     }
                 } else if (node.getLevel() === 2) {
                     servers.add(node.data.title);
                 }
             });
             initDateRangePicker(Array.from(timestamps).sort());
-            let lastNode = $("#folderTree").dynatree("getTree").getNodeByKey(lastFolderId);
-            let lastServers = [];
-            if (isCheckNull(lastNode) === false && isCheckNull(lastNode.childList) === false) {
-                lastServers = lastNode.childList.map(child => child.data.title);
+
+            let lastServers = new Set();
+            if (folderIds.length > 0) {
+                // last date server/container
+                let lastNode = $("#folderTree").dynatree("getTree").getNodeByKey(folderIds[folderIds.length - 1]);
+                let lastDate = lastNode.data.title.substring(0, 10);
+                for(const id of folderIds.reverse()){
+                    let node = $("#folderTree").dynatree("getTree").getNodeByKey(id);
+                    if (node.data.title.indexOf(lastDate) === 0) {
+                        if (isCheckNull(node) === false && isCheckNull(node.childList) === false) {
+                            node.childList.map(child => child.data.title).forEach(item => lastServers.add(item))
+                        }
+                    } else {
+                        break;
+                    }
+                }
             }
-            initServerSelector(lastServers, Array.from(servers).sort());
+            initServerSelector(Array.from(lastServers), Array.from(servers).sort());
         },
         minExpandLevel: 1,
         persist: false,
