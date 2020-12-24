@@ -2211,7 +2211,13 @@ const displayDetail = function(cveID) {
                 let referencesId = target + "-references-list";
                 $("#References").append("<ul id='"+ referencesId + "'>");
                 $.each(data.cveContents[target].references, function(x, x_val) {
-                    $("#" + referencesId).append("<li>[" + x_val.source + "]<a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.link + ")</a></li>");
+                    let src = "";
+                    if (x_val.source !== undefined) {
+                        src = x_val.source;
+                    } else if (isCheckNull(x_val.tags) === false) {
+                        src = x_val.tags.join(", ");
+                    }
+                    $("#" + referencesId).append("<li>[" + src + "] <a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'>" + x_val.link + "</a></li>");
                     countRef++;
                 });
                 $("#References").append("</ul>");
