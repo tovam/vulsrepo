@@ -839,6 +839,8 @@ const createPivotData = function(resultArray) {
             }
             array.push(result);
         } else {
+            let reportedVersion = x_val.data.reportedVersion.replace("v", "");
+            let newMitigationStructure = compareVersion(reportedVersion, "0.14.0") >= 0;
             $.each(x_val.data.scannedCves, function(y, y_val) {
                 let targetNames = getTargetPackages(y_val);
 
@@ -876,8 +878,7 @@ const createPivotData = function(resultArray) {
                         "Path": libPath,
                         "NotFixedYet": NotFixedYet,
                         "FixedIn": fixedIn,
-                        "FixState": fixState,
-                        "Reported Version": x_val.data.reportedVersion.replace("v", "")
+                        "FixState": fixState
                     };
 
                     result["ServerName"] = getServerName(x_val.data);
@@ -1115,7 +1116,7 @@ const createPivotData = function(resultArray) {
                     }
 
 
-                    if (compareVersion(result["Reported Version"], "0.14.0") >= 0) {
+                    if (newMitigationStructure === true) {
                         // 0.14.x or later
                         if (isCheckNull(y_val.mitigations) === false) {
                             result["Mitigation"] = "Yes";
@@ -1144,6 +1145,7 @@ const createPivotData = function(resultArray) {
                             result["Mitigation"] = "";
                         }
                     }
+                    result["Reported Version"] = reportedVersion;
 
                     let getCvss = function(target) {
                         if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined) {
@@ -2004,8 +2006,15 @@ const displayDetail = function(cveID) {
     if (isCheckNull(data.mitigations) === false) {
         $.each(data.mitigations, function(m, m_val) {
             countMitigation++;
-            $("#Mitigation").append("<div><strong>[" + m_val.cveContentType + "]</strong> <a href=\"" + m_val.url + "\" rel='noopener noreferrer' target='_blank'>" + m_val.url + "</a></div>");
-            $("#Mitigation").append("<div class='div-pre'>" + m_val.mitigation + "</div>");
+            let header = "<div><strong>[" + m_val.cveContentType + "]</strong>";
+            if (m_val.url !== undefined) {
+                header = header + " <a href=\"" + m_val.url + "\" rel='noopener noreferrer' target='_blank'>" + m_val.url + "</a>";
+            }
+            header = header + "</div>";
+            $("#Mitigation").append(header);
+            if (m_val.mitigation !== undefined) {
+                $("#Mitigation").append("<div class='div-pre'>" + m_val.mitigation + "</div>");
+            }
             $("#count-mitigation").text(countMitigation);
             $("#Mitigation-section").show();
         });
@@ -2162,7 +2171,7 @@ const displayDetail = function(cveID) {
             $("#exploit").append("<div><strong>=== Exploit Codes ===</strong></div>");
             $("#exploit").append("<ul id='exploit-list'>");
             $.each(data.exploits, function(x, x_val) {
-                $("#exploit-list").append("<li>[" + x_val.exploitType + "]<a href=\"" + x_val.url + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.url + ")</a> " + x_val.description + "</li>");
+                $("#exploit-list").append("<li>[" + x_val.exploitType + "] <a href=\"" + x_val.url + "\" rel='noopener noreferrer' target='_blank'>" + x_val.url + "</a> " + x_val.description + "</li>");
                 countExploit++;
             });
             $("#exploit").append("</ul>");
