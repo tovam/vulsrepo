@@ -747,6 +747,22 @@ const isCheckNull = function(o) {
     return false;
 }
 
+const compareVersion = function(v, c) {
+    let va = v.split(".");
+    let ca = c.split(".");
+
+    for (let i = 0; i < 3; i++) {
+        let vn = parseInt(va[i]);
+        let cn = parseInt(ca[i]);
+        if (vn > cn) {
+            return 1;
+        } else if (vn < cn) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 const createPivotData = function(resultArray) {
     let array = [];
     let cveid_count = 0;
@@ -805,6 +821,7 @@ const createPivotData = function(resultArray) {
                 "Process": "healthy",
                 "Published": "healthy",
                 "Last Modified": "healthy",
+                "Reported Version": x_val.data.reportedVersion.replace("v", "")
             };
 
             result["ServerName"] = getServerName(x_val.data);
@@ -859,7 +876,8 @@ const createPivotData = function(resultArray) {
                         "Path": libPath,
                         "NotFixedYet": NotFixedYet,
                         "FixedIn": fixedIn,
-                        "FixState": fixState
+                        "FixState": fixState,
+                        "Reported Version": x_val.data.reportedVersion.replace("v", "")
                     };
 
                     result["ServerName"] = getServerName(x_val.data);
@@ -1096,24 +1114,35 @@ const createPivotData = function(resultArray) {
                         result["Last Modified"] = "Unknown";
                     }
 
-                    var getMitigation = function(target) {
-                        if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined || y_val.cveContents[target].mitigation === undefined || y_val.cveContents[target].mitigation === "") {
-                            return false;
+
+                    if (compareVersion(result["Reported Version"], "0.14.0") >= 0) {
+                        // 0.14.x or later
+                        if (isCheckNull(y_val.mitigations) === false) {
+                            result["Mitigation"] = "Yes";
+                        } else {
+                            result["Mitigation"] = "";
                         }
+                    } else {
+                        // 0.13.x or earlier
+                        var getMitigation = function(target) {
+                            if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined || y_val.cveContents[target].mitigation === undefined || y_val.cveContents[target].mitigation === "") {
+                                return false;
+                            }
 
-                        result["Mitigation"] = "Yes";
-                        return true;
-                    };
+                            result["Mitigation"] = "Yes";
+                            return true;
+                        };
 
-                    var mitigationFlag = false;
-                    $.each(prioltyFlag, function(i, i_val) {
-                        if (mitigationFlag !== true) {
-                            mitigationFlag = getMitigation(i_val);
+                        var mitigationFlag = false;
+                        $.each(prioltyFlag, function(i, i_val) {
+                            if (mitigationFlag !== true) {
+                                mitigationFlag = getMitigation(i_val);
+                            }
+                        });
+
+                        if (mitigationFlag === false) {
+                            result["Mitigation"] = "";
                         }
-                    });
-
-                    if (mitigationFlag === false) {
-                        result["Mitigation"] = "";
                     }
 
                     let getCvss = function(target) {
@@ -1586,6 +1615,7 @@ const createDetailData = function(cveID) {
             targetObj["exploits"] = tmpCve.exploits;
             targetObj["metasploits"] = tmpCve.metasploits;
             targetObj["alertDict"] = tmpCve.alertDict;
+            targetObj["mitigations"] = tmpCve.mitigations;
             let priority = db.get("vulsrepo_pivotPriority");
             $.each(priority, function(i, i_val) {
                 if (tmpCve.cveContents !== undefined && tmpCve.cveContents[i_val] !== undefined) {
@@ -1969,6 +1999,17 @@ const displayDetail = function(cveID) {
         mode: 'words',
         truncate: 50
     });
+
+    // ---Mitigation---
+    if (isCheckNull(data.mitigations) === false) {
+        $.each(data.mitigations, function(m, m_val) {
+            countMitigation++;
+            $("#Mitigation").append("<div><strong>[" + m_val.cveContentType + "]</strong> <a href=\"" + m_val.url + "\" rel='noopener noreferrer' target='_blank'>" + m_val.url + "</a></div>");
+            $("#Mitigation").append("<div class='div-pre'>" + m_val.mitigation + "</div>");
+            $("#count-mitigation").text(countMitigation);
+            $("#Mitigation-section").show();
+        });
+    }
 
     // ---CweID---
     let getCweIDInfo = function(cveContents, target) {
