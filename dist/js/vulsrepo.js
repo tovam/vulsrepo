@@ -1655,7 +1655,7 @@ const initDetail = function() {
     $("#modal-label").text("");
     $("#count-cert").text("0");
     $("#count-References").text("0");
-    $("#CweID,#Mitigation,#Link,#cert,#exploit,#References").empty();
+    $("#CweID,#Mitigation,#Link,#cert,#exploit,#reference-tags,#References").empty();
     $("#Mitigation-section").hide();
     $("#cert-section").hide();
     $("#exploit-section").hide();
@@ -2213,29 +2213,69 @@ const displayDetail = function(cveID) {
     // ---References---
     let countRef = 0;
 
+    let tags = new Set();
     var addRef = function(target) {
         if (data.cveContents[target] !== undefined) {
             if (isCheckNull(data.cveContents[target].references) === false) {
-                $("#References").append("<div><strong>=== " + target + " ===</strong></div>");
+                let referenceListId = target + "-references";
+                $("#References").append("<div id='"+ referenceListId + "'>");
+                $("#" + referenceListId).append("<div><strong>=== " + target + " ===</strong></div>");
                 let referencesId = target + "-references-list";
-                $("#References").append("<ul id='"+ referencesId + "'>");
+                $("#" + referenceListId).append("<ul id='"+ referencesId + "'>");
                 $.each(data.cveContents[target].references, function(x, x_val) {
                     let src = "";
+                    let itemTag = [];
                     if (x_val.source !== undefined) {
                         src = x_val.source;
+                        src = src.replace(" ", "");
+                        tags.add(src);
+                        itemTag.push(src);
                     } else if (isCheckNull(x_val.tags) === false) {
                         src = x_val.tags.join(", ");
+                        x_val.tags.forEach(item => tags.add(item));
+                        itemTag.push(...x_val.tags.map(tag => tag.replace(" ", "")));
+                        console.log(itemTag);
+                    } else {
+                        tags.add(src);
+                        itemTag.push(src);
                     }
-                    $("#" + referencesId).append("<li>[" + src + "] <a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'>" + x_val.link + "</a></li>");
+                    let tagStrings = itemTag.join(" ");
+                    if (tagStrings === "") {
+                        tagStrings = "-";
+                    }
+                    $("#" + referencesId).append("<li data-tags='" + tagStrings + "'>[" + src + "] <a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'>" + x_val.link + "</a></li>");
                     countRef++;
                 });
-                $("#References").append("</ul>");
+                $("#" + referenceListId).append("</ul>");
+                $("#References").append("</div>");
             }
         }
     }
 
     $.each(priority, function(i, i_val) {
         addRef(i_val);
+    });
+
+    // TODO sort tag "No tag", "NVD", "JVN", "Vender Advisory" "Patch", ...
+    Array.from(tags).forEach(tag => {
+        let tagname = tag;
+        if (tag === "") {
+            tag = "-";
+            tagname = "No tag";
+        }
+        $("#reference-tags").append("<label class='btn btn-default'><input data-value='" + tag.replace(" ", "") + "' type='checkbox' autocomplete='off'>" +  tagname + "</label>");
+    });
+    $('#reference-tags > label > input:checkbox').change(function(e) {
+        let val = $(this).data("value");
+        if ($(this).prop("checked") === true) {
+            // TODO
+            //$("#References > div > ul > li[data-tags~='" + val + "']").show();
+            //console.log(e);
+        } else {
+            // TODO
+            //$("#References > div > ul > li[data-tags~='" + val + "']").hide();
+            //console.log(e);
+        }
     });
 
     $("#count-References").text(countRef);
