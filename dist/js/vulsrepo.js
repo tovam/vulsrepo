@@ -747,6 +747,22 @@ const isCheckNull = function(o) {
     return false;
 }
 
+const compareVersion = function(v, c) {
+    let va = v.split(".");
+    let ca = c.split(".");
+
+    for (let i = 0; i < 3; i++) {
+        let vn = parseInt(va[i]);
+        let cn = parseInt(ca[i]);
+        if (vn > cn) {
+            return 1;
+        } else if (vn < cn) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 const createPivotData = function(resultArray) {
     let array = [];
     let cveid_count = 0;
@@ -805,6 +821,7 @@ const createPivotData = function(resultArray) {
                 "Process": "healthy",
                 "Published": "healthy",
                 "Last Modified": "healthy",
+                "Reported Version": x_val.data.reportedVersion.replace("v", "")
             };
 
             result["ServerName"] = getServerName(x_val.data);
@@ -822,6 +839,8 @@ const createPivotData = function(resultArray) {
             }
             array.push(result);
         } else {
+            let reportedVersion = x_val.data.reportedVersion.replace("v", "");
+            let newMitigationStructure = compareVersion(reportedVersion, "0.14.0") >= 0;
             $.each(x_val.data.scannedCves, function(y, y_val) {
                 let targetNames = getTargetPackages(y_val);
 
@@ -1096,25 +1115,37 @@ const createPivotData = function(resultArray) {
                         result["Last Modified"] = "Unknown";
                     }
 
-                    var getMitigation = function(target) {
-                        if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined || y_val.cveContents[target].mitigation === undefined || y_val.cveContents[target].mitigation === "") {
-                            return false;
+
+                    if (newMitigationStructure === true) {
+                        // 0.14.x or later
+                        if (isCheckNull(y_val.mitigations) === false) {
+                            result["Mitigation"] = "Yes";
+                        } else {
+                            result["Mitigation"] = "";
                         }
+                    } else {
+                        // 0.13.x or earlier
+                        var getMitigation = function(target) {
+                            if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined || y_val.cveContents[target].mitigation === undefined || y_val.cveContents[target].mitigation === "") {
+                                return false;
+                            }
 
-                        result["Mitigation"] = "Yes";
-                        return true;
-                    };
+                            result["Mitigation"] = "Yes";
+                            return true;
+                        };
 
-                    var mitigationFlag = false;
-                    $.each(prioltyFlag, function(i, i_val) {
-                        if (mitigationFlag !== true) {
-                            mitigationFlag = getMitigation(i_val);
+                        var mitigationFlag = false;
+                        $.each(prioltyFlag, function(i, i_val) {
+                            if (mitigationFlag !== true) {
+                                mitigationFlag = getMitigation(i_val);
+                            }
+                        });
+
+                        if (mitigationFlag === false) {
+                            result["Mitigation"] = "";
                         }
-                    });
-
-                    if (mitigationFlag === false) {
-                        result["Mitigation"] = "";
                     }
+                    result["Reported Version"] = reportedVersion;
 
                     let getCvss = function(target) {
                         if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined) {
@@ -1586,6 +1617,7 @@ const createDetailData = function(cveID) {
             targetObj["exploits"] = tmpCve.exploits;
             targetObj["metasploits"] = tmpCve.metasploits;
             targetObj["alertDict"] = tmpCve.alertDict;
+            targetObj["mitigations"] = tmpCve.mitigations;
             let priority = db.get("vulsrepo_pivotPriority");
             $.each(priority, function(i, i_val) {
                 if (tmpCve.cveContents !== undefined && tmpCve.cveContents[i_val] !== undefined) {
@@ -1970,6 +2002,24 @@ const displayDetail = function(cveID) {
         truncate: 50
     });
 
+    // ---Mitigation---
+    if (isCheckNull(data.mitigations) === false) {
+        $.each(data.mitigations, function(m, m_val) {
+            countMitigation++;
+            let header = "<div><strong>[" + m_val.cveContentType + "]</strong>";
+            if (m_val.url !== undefined) {
+                header = header + " <a href=\"" + m_val.url + "\" rel='noopener noreferrer' target='_blank'>" + m_val.url + "</a>";
+            }
+            header = header + "</div>";
+            $("#Mitigation").append(header);
+            if (m_val.mitigation !== undefined) {
+                $("#Mitigation").append("<div class='div-pre'>" + m_val.mitigation + "</div>");
+            }
+            $("#count-mitigation").text(countMitigation);
+            $("#Mitigation-section").show();
+        });
+    }
+
     // ---CweID---
     let getCweIDInfo = function(cveContents, target) {
         if (cveContents[target] !== undefined) {
@@ -2121,7 +2171,7 @@ const displayDetail = function(cveID) {
             $("#exploit").append("<div><strong>=== Exploit Codes ===</strong></div>");
             $("#exploit").append("<ul id='exploit-list'>");
             $.each(data.exploits, function(x, x_val) {
-                $("#exploit-list").append("<li>[" + x_val.exploitType + "]<a href=\"" + x_val.url + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.url + ")</a> " + x_val.description + "</li>");
+                $("#exploit-list").append("<li>[" + x_val.exploitType + "] <a href=\"" + x_val.url + "\" rel='noopener noreferrer' target='_blank'>" + x_val.url + "</a> " + x_val.description + "</li>");
                 countExploit++;
             });
             $("#exploit").append("</ul>");
@@ -2170,7 +2220,13 @@ const displayDetail = function(cveID) {
                 let referencesId = target + "-references-list";
                 $("#References").append("<ul id='"+ referencesId + "'>");
                 $.each(data.cveContents[target].references, function(x, x_val) {
-                    $("#" + referencesId).append("<li>[" + x_val.source + "]<a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'> (" + x_val.link + ")</a></li>");
+                    let src = "";
+                    if (x_val.source !== undefined) {
+                        src = x_val.source;
+                    } else if (isCheckNull(x_val.tags) === false) {
+                        src = x_val.tags.join(", ");
+                    }
+                    $("#" + referencesId).append("<li>[" + src + "] <a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'>" + x_val.link + "</a></li>");
                     countRef++;
                 });
                 $("#References").append("</ul>");
