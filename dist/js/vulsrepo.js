@@ -2239,11 +2239,11 @@ const displayDetail = function(cveID) {
                         tags.add(src);
                         itemTag.push(src);
                     }
-                    let tagStrings = itemTag.join(" ");
-                    if (tagStrings === "") {
-                        tagStrings = "-";
+                    let tagStrings = itemTag.map(tag => '"' + tag + '"').join(",");
+                    if (tagStrings === '""') {
+                        tagStrings = '"-"';
                     }
-                    $("#" + referencesId).append("<li data-tags='" + tagStrings + "'>[" + src + "] <a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'>" + x_val.link + "</a></li>");
+                    $("#" + referencesId).append("<li data-tags='[" + tagStrings + "]'>[" + src + "] <a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'>" + x_val.link + "</a></li>");
                     countRef++;
                 });
                 $("#" + referenceListId).append("</ul>");
@@ -2256,7 +2256,7 @@ const displayDetail = function(cveID) {
         addRef(i_val);
     });
 
-    // TODO sort tag "No tag", "NVD", "JVN", "Vender Advisory" "Patch", ...
+    // TODO sort tag "No tag", "CVE", "NVD", "JVN", "Vender Advisory", "Patch", "関連文書", "Ref", "Bug", "Mailing List", "Third Party Advisory", "Exploit", "Issue Tracking", "VDB Entry" ... "Broken Link"
     Array.from(tags).forEach(tag => {
         let tagname = tag;
         if (tag === "") {
@@ -2265,17 +2265,33 @@ const displayDetail = function(cveID) {
         }
         $("#reference-tags").append("<label class='btn btn-default'><input data-value='" + tag.replace(" ", "") + "' type='checkbox' autocomplete='off'>" +  tagname + "</label>");
     });
+
     $('#reference-tags > label > input:checkbox').change(function(e) {
-        let val = $(this).data("value");
-        if ($(this).prop("checked") === true) {
-            // TODO
-            //$("#References > div > ul > li[data-tags~='" + val + "']").show();
-            //console.log(e);
-        } else {
-            // TODO
-            //$("#References > div > ul > li[data-tags~='" + val + "']").hide();
-            //console.log(e);
-        }
+        // get selected tag
+        let checks = [];
+        $('#reference-tags > label > input:checkbox').each(function(index) {
+            if ($(this).prop("checked") === true) {
+                checks.push($(this).data("value"));
+            }
+        });
+
+        $("#References > div > ul > li").each(function(index) {
+            let tags = $(this).data("tags");
+
+            let found = tags.some(r=> checks.includes(r));
+            if (found === true) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    $('#reference-tags > label').each(function(index) {
+        $(this).addClass("active");
+    });
+    $('#reference-tags > label > input:checkbox').each(function(index) {
+        $(this).prop("checked", true);
     });
 
     $("#count-References").text(countRef);
