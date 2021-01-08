@@ -2256,8 +2256,7 @@ const displayDetail = function(cveID) {
         addRef(i_val);
     });
 
-    // TODO sort tag "No tag", "CVE", "NVD", "JVN", "Vender Advisory", "Patch", "関連文書", "Ref", "Bug", "Mailing List", "Third Party Advisory", "Exploit", "Issue Tracking", "VDB Entry" ... "Broken Link"
-    Array.from(tags).forEach(tag => {
+    Array.from(tags).sort().forEach(tag => {
         let tagname = tag;
         if (tag === "") {
             tag = "-";
