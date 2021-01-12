@@ -2265,8 +2265,8 @@ const displayDetail = function(cveID) {
         $("#reference-tags").append("<label class='btn btn-default'><input data-value='" + tag.replace(" ", "") + "' type='checkbox' autocomplete='off'>" +  tagname + "</label>");
     });
 
-    $('#reference-tags > label > input:checkbox').change(function(e) {
-        // get selected tag
+    var displayReferenceList = function() {
+        // get selected tags
         let checks = [];
         $('#reference-tags > label > input:checkbox').each(function(index) {
             if ($(this).prop("checked") === true) {
@@ -2284,14 +2284,29 @@ const displayDetail = function(cveID) {
                 $(this).hide();
             }
         });
+    }
+
+    $('#reference-tags > label > input:checkbox').change(function(e) {
+        let tagValue = $(this).data("value");
+        if ($(this).prop("checked") === false) {
+            db.set("vulsrepo_reference_tag_" + tagValue, "false");
+        } else {
+            db.remove("vulsrepo_reference_tag_" + tagValue);
+        }
+
+        displayReferenceList();
     });
 
-    $('#reference-tags > label').each(function(index) {
-        $(this).addClass("active");
-    });
     $('#reference-tags > label > input:checkbox').each(function(index) {
-        $(this).prop("checked", true);
+        let state = db.get("vulsrepo_reference_tag_" + $(this).data("value"));
+        if (state === "false") {
+            $(this).prop("checked", false);
+        } else {
+            $(this).prop("checked", true);
+            $(this).parent().addClass("active");
+        }
     });
+    displayReferenceList();
 
     $("#count-References").text(countRef);
 
