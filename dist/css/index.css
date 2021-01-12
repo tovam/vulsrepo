@@ -407,3 +407,9 @@ body.noscroll {
 .reference-tags {
     margin-bottom: 10px;
 }
+
+summary {
+  display: list-item;
+  cursor: pointer;
+  font-weight: bold;
+}

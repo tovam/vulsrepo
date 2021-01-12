@@ -2218,8 +2218,8 @@ const displayDetail = function(cveID) {
         if (data.cveContents[target] !== undefined) {
             if (isCheckNull(data.cveContents[target].references) === false) {
                 let referenceListId = target + "-references";
-                $("#References").append("<div id='"+ referenceListId + "'>");
-                $("#" + referenceListId).append("<div><strong>=== " + target + " ===</strong></div>");
+                $("#References").append("<details id='"+ referenceListId + "'>");
+                $("#" + referenceListId).append("<summary>" + target + " (<span></span>)</summary>");
                 let referencesId = target + "-references-list";
                 $("#" + referenceListId).append("<ul id='"+ referencesId + "'>");
                 $.each(data.cveContents[target].references, function(x, x_val) {
@@ -2247,7 +2247,7 @@ const displayDetail = function(cveID) {
                     countRef++;
                 });
                 $("#" + referenceListId).append("</ul>");
-                $("#References").append("</div>");
+                $("#References").append("</details>");
             }
         }
     }
@@ -2274,7 +2274,7 @@ const displayDetail = function(cveID) {
             }
         });
 
-        $("#References > div > ul > li").each(function(index) {
+        $("#References > details > ul > li").each(function(index) {
             let tags = $(this).data("tags");
 
             let found = tags.some(r=> checks.includes(r));
@@ -2284,7 +2284,25 @@ const displayDetail = function(cveID) {
                 $(this).hide();
             }
         });
+
+        $("#References > details > ul").each(function(index) {
+            let count = $(this).children().length;
+            let visibleCount = $(this).children().filter(function() {
+                return $(this).css('display') !== 'none';
+            }).length;
+            let text = visibleCount + "/" + count;
+            $(this).parent().find("summary > span").text(text);
+        });
     }
+
+    $("#References > details").on('toggle', function() {
+        let refsId = $(this).attr("id");
+        if ($(this).attr("open") === undefined) {
+            db.set("vulsrepo_reference_source_" + refsId, "false");
+        } else {
+            db.remove("vulsrepo_reference_source_" + refsId);
+        }
+    });
 
     $('#reference-tags > label > input:checkbox').change(function(e) {
         let tagValue = $(this).data("value");
@@ -2295,6 +2313,13 @@ const displayDetail = function(cveID) {
         }
 
         displayReferenceList();
+    });
+
+    $("#References > details").each(function(index) {
+        let state = db.get("vulsrepo_reference_source_" + $(this).attr("id"));
+        if (state === null) {
+            $(this).attr("open", "open");
+        }
     });
 
     $('#reference-tags > label > input:checkbox').each(function(index) {
