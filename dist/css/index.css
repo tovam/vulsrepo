@@ -403,3 +403,13 @@ body.noscroll {
     padding-left: 8px !important;
     color: #a9a9a9 !important;
 }
+
+.reference-tags {
+    margin-bottom: 10px;
+}
+
+summary {
+  display: list-item;
+  cursor: pointer;
+  font-weight: bold;
+}

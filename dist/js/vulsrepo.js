@@ -1655,7 +1655,7 @@ const initDetail = function() {
     $("#modal-label").text("");
     $("#count-cert").text("0");
     $("#count-References").text("0");
-    $("#CweID,#Mitigation,#Link,#cert,#exploit,#References").empty();
+    $("#CweID,#Mitigation,#Link,#cert,#exploit,#reference-tags,#References").empty();
     $("#Mitigation-section").hide();
     $("#cert-section").hide();
     $("#exploit-section").hide();
@@ -2213,23 +2213,41 @@ const displayDetail = function(cveID) {
     // ---References---
     let countRef = 0;
 
+    let tags = new Set();
     var addRef = function(target) {
         if (data.cveContents[target] !== undefined) {
             if (isCheckNull(data.cveContents[target].references) === false) {
-                $("#References").append("<div><strong>=== " + target + " ===</strong></div>");
+                let referenceListId = target + "-references";
+                $("#References").append("<details id='"+ referenceListId + "'>");
+                $("#" + referenceListId).append("<summary>" + target + " (<span></span>)</summary>");
                 let referencesId = target + "-references-list";
-                $("#References").append("<ul id='"+ referencesId + "'>");
+                $("#" + referenceListId).append("<ul id='"+ referencesId + "'>");
                 $.each(data.cveContents[target].references, function(x, x_val) {
                     let src = "";
+                    let itemTag = [];
                     if (x_val.source !== undefined) {
                         src = x_val.source;
+                        src = src.replace(" ", "");
+                        tags.add(src);
+                        itemTag.push(src);
                     } else if (isCheckNull(x_val.tags) === false) {
                         src = x_val.tags.join(", ");
+                        x_val.tags.forEach(item => tags.add(item));
+                        itemTag.push(...x_val.tags.map(tag => tag.replace(" ", "")));
+                        console.log(itemTag);
+                    } else {
+                        tags.add(src);
+                        itemTag.push(src);
                     }
-                    $("#" + referencesId).append("<li>[" + src + "] <a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'>" + x_val.link + "</a></li>");
+                    let tagStrings = itemTag.map(tag => '"' + tag + '"').join(",");
+                    if (tagStrings === '""') {
+                        tagStrings = '"-"';
+                    }
+                    $("#" + referencesId).append("<li data-tags='[" + tagStrings + "]'>[" + src + "] <a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'>" + x_val.link + "</a></li>");
                     countRef++;
                 });
-                $("#References").append("</ul>");
+                $("#" + referenceListId).append("</ul>");
+                $("#References").append("</details>");
             }
         }
     }
@@ -2237,6 +2255,83 @@ const displayDetail = function(cveID) {
     $.each(priority, function(i, i_val) {
         addRef(i_val);
     });
+
+    Array.from(tags).sort().forEach(tag => {
+        let tagname = tag;
+        if (tag === "") {
+            tag = "-";
+            tagname = "No tag";
+        }
+        $("#reference-tags").append("<label class='btn btn-default'><input data-value='" + tag.replace(" ", "") + "' type='checkbox' autocomplete='off'>" +  tagname + "</label>");
+    });
+
+    var displayReferenceList = function() {
+        // get selected tags
+        let checks = [];
+        $('#reference-tags > label > input:checkbox').each(function(index) {
+            if ($(this).prop("checked") === true) {
+                checks.push($(this).data("value"));
+            }
+        });
+
+        $("#References > details > ul > li").each(function(index) {
+            let tags = $(this).data("tags");
+
+            let found = tags.some(r=> checks.includes(r));
+            if (found === true) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+
+        $("#References > details > ul").each(function(index) {
+            let count = $(this).children().length;
+            let visibleCount = $(this).children().filter(function() {
+                return $(this).css('display') !== 'none';
+            }).length;
+            let text = visibleCount + "/" + count;
+            $(this).parent().find("summary > span").text(text);
+        });
+    }
+
+    $("#References > details").on('toggle', function() {
+        let refsId = $(this).attr("id");
+        if ($(this).attr("open") === undefined) {
+            db.set("vulsrepo_reference_source_" + refsId, "false");
+        } else {
+            db.remove("vulsrepo_reference_source_" + refsId);
+        }
+    });
+
+    $('#reference-tags > label > input:checkbox').change(function(e) {
+        let tagValue = $(this).data("value");
+        if ($(this).prop("checked") === false) {
+            db.set("vulsrepo_reference_tag_" + tagValue, "false");
+        } else {
+            db.remove("vulsrepo_reference_tag_" + tagValue);
+        }
+
+        displayReferenceList();
+    });
+
+    $("#References > details").each(function(index) {
+        let state = db.get("vulsrepo_reference_source_" + $(this).attr("id"));
+        if (state === null) {
+            $(this).attr("open", "open");
+        }
+    });
+
+    $('#reference-tags > label > input:checkbox').each(function(index) {
+        let state = db.get("vulsrepo_reference_tag_" + $(this).data("value"));
+        if (state === "false") {
+            $(this).prop("checked", false);
+        } else {
+            $(this).prop("checked", true);
+            $(this).parent().addClass("active");
+        }
+    });
+    displayReferenceList();
 
     $("#count-References").text(countRef);
 
