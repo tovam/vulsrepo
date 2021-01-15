@@ -777,12 +777,20 @@ const createPivotData = function(resultArray) {
     $.each(resultArray, function(x, x_val) {
         if (Object.keys(x_val.data.scannedCves).length === 0) {
 
+            let errors = "";
+            if (isCheckNull(x_val.data.errors) === false) {
+                errors = x_val.data.errors.join(" ");
+            }
+            let warnings = "";
+            if (isCheckNull(x_val.data.warnings) === false) {
+                warnings = x_val.data.warnings.join(" ");
+            }
             let result = {
                 "ScanTime": x_val.scanTime,
                 "Family": x_val.data.family,
                 "Release": x_val.data.release,
-                "Errors": x_val.data.errors,
-                "Warnings": x_val.data.warnings,
+                "Errors": errors,
+                "Warnings": warnings,
                 "CveID": "healthy",
                 "Packages": "healthy",
                 "Path": "healthy",
@@ -867,12 +875,20 @@ const createPivotData = function(resultArray) {
                         libInfo = getLibraryInformation(x_val.data.libraries, pkgName, libPath);
                     }
 
+                    let errors = "";
+                    if (isCheckNull(x_val.data.errors) === false) {
+                        errors = x_val.data.errors.join(" ");
+                    }
+                    let warnings = "";
+                    if (isCheckNull(x_val.data.warnings) === false) {
+                        warnings = x_val.data.warnings.join(" ");
+                    }
                     let result = {
                         "ScanTime": x_val.scanTime,
                         "Family": x_val.data.family,
                         "Release": x_val.data.release,
-                        "Errors": x_val.data.errors,
-                        "Warnings": x_val.data.warnings,
+                        "Errors": errors,
+                        "Warnings": warnings,
                         "CveID": "CHK-cveid-" + y_val.cveID,
                         "Packages": pkgName,
                         "Path": libPath,
