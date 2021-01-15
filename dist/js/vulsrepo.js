@@ -777,10 +777,20 @@ const createPivotData = function(resultArray) {
     $.each(resultArray, function(x, x_val) {
         if (Object.keys(x_val.data.scannedCves).length === 0) {
 
+            let errors = "";
+            if (isCheckNull(x_val.data.errors) === false) {
+                errors = x_val.data.errors.join(" ");
+            }
+            let warnings = "";
+            if (isCheckNull(x_val.data.warnings) === false) {
+                warnings = x_val.data.warnings.join(" ");
+            }
             let result = {
                 "ScanTime": x_val.scanTime,
                 "Family": x_val.data.family,
                 "Release": x_val.data.release,
+                "Errors": errors,
+                "Warnings": warnings,
                 "CveID": "healthy",
                 "Packages": "healthy",
                 "Path": "healthy",
@@ -824,7 +834,7 @@ const createPivotData = function(resultArray) {
                 "Reported Version": x_val.data.reportedVersion.replace("v", "")
             };
 
-            result["ServerName"] = getServerName(x_val.data);
+            result["ServerName"] = x_val.data.serverName;
 
             if (x_val.data.platform.name !== "") {
                 result["Platform"] = x_val.data.platform.name;
@@ -832,11 +842,7 @@ const createPivotData = function(resultArray) {
                 result["Platform"] = "None";
             }
 
-            if (x_val.data.container.name !== "") {
-                result["Container"] = x_val.data.container.name;
-            } else {
-                result["Container"] = "None";
-            }
+            result["Container"] = getContainerName(x_val.data);
             array.push(result);
         } else {
             let reportedVersion = x_val.data.reportedVersion.replace("v", "");
@@ -869,10 +875,20 @@ const createPivotData = function(resultArray) {
                         libInfo = getLibraryInformation(x_val.data.libraries, pkgName, libPath);
                     }
 
+                    let errors = "";
+                    if (isCheckNull(x_val.data.errors) === false) {
+                        errors = x_val.data.errors.join(" ");
+                    }
+                    let warnings = "";
+                    if (isCheckNull(x_val.data.warnings) === false) {
+                        warnings = x_val.data.warnings.join(" ");
+                    }
                     let result = {
                         "ScanTime": x_val.scanTime,
                         "Family": x_val.data.family,
                         "Release": x_val.data.release,
+                        "Errors": errors,
+                        "Warnings": warnings,
                         "CveID": "CHK-cveid-" + y_val.cveID,
                         "Packages": pkgName,
                         "Path": libPath,
@@ -881,7 +897,7 @@ const createPivotData = function(resultArray) {
                         "FixState": fixState
                     };
 
-                    result["ServerName"] = getServerName(x_val.data);
+                    result["ServerName"] = x_val.data.serverName;
 
                     var getCweId = function(target) {
                         if (y_val.cveContents === undefined ||
@@ -945,11 +961,7 @@ const createPivotData = function(resultArray) {
                         result["Platform"] = "None";
                     }
 
-                    if (x_val.data.container.name !== "") {
-                        result["Container"] = x_val.data.container.name;
-                    } else {
-                        result["Container"] = "None";
-                    }
+                    result["Container"] = getContainerName(x_val.data);
 
                     var cert = "";
                     if (y_val.alertDict.en != null) {
@@ -1292,15 +1304,22 @@ const getFixState = function(val) {
     return result;
 };
 
-const getServerName = function(data) {
-    let servername = data.serverName;
+const getContainerName = function(data) {
+    let containerName = "";
+
+    if (data.container.name !== "") {
+        containerName = data.container.name;
+    } else {
+        containerName = "None";
+    }
+
     if (isCheckNull(data.warnings) === false) {
-        servername = "[Warn] " + servername;
+        containerName = "[Warn] " + containerName;
     }
     if (data.runningKernel.rebootRequired === true) {
-        servername = "[Reboot Required] " + servername;
+        containerName = "[Reboot Required] " + containerName;
     }
-    return servername;
+    return containerName;
 };
 
 const displayPivot = function(array) {
