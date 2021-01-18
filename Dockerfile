@@ -18,7 +18,7 @@ RUN mkdir /vulsrepo \
     && sed -i -e 's/home\/vuls-user/vulsrepo/g' /vulsrepo/vulsrepo-config.toml \
     && sed -i -e 's/\/opt//g' /vulsrepo/vulsrepo-config.toml
 
-FROM alpine:3.10
+FROM alpine:3.11.7
 
 LABEL maintainer="hikachan sadayuki-matsuno usiusi360 ishiDACo"
 
