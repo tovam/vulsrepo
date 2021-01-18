@@ -409,7 +409,7 @@ body.noscroll {
 }
 
 summary {
-  display: list-item;
-  cursor: pointer;
-  font-weight: bold;
+    display: list-item;
+    cursor: pointer;
+    font-weight: bold;
 }
