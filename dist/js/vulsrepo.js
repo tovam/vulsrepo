@@ -720,6 +720,82 @@ const createFolderTree = function() {
                 }
             }
             initServerSelector(Array.from(lastServers), Array.from(servers).sort());
+
+            if (location.search !== "") {
+                try {
+                    let param = [...new URLSearchParams(location.search).entries()].reduce((obj, e) => ({...obj, [e[0]]: e[1]}), {});
+                    let selectParams = [];
+                    let foundParam = false;
+                    for (let [key, type] of Object.entries(vulsrepo_direct_params)) {
+                        if (param[key] !== undefined) {
+                            foundParam = true;
+                            if (key === "server") {
+                                selectParams["servers"] = param[key].split(' ');
+                            } else {
+                                // 2021-01-13T13:17:12+09:00 -> 2021-01-13T13:17:12 09:00 -> 2021-01-13T13:17:12+09:00
+                                selectParams[key] = param[key].replace(' ', '+');
+                            }
+                        }
+                    }
+                    if (foundParam === false) {
+                        return;
+                    }
+
+                    // select server
+                    let slimselect = document.querySelector("#targetServer").slim;
+                    if (selectParams["servers"] === undefined) {
+                        selectParams["servers"] = [];
+                    }
+                    slimselect.set(selectParams["servers"]);
+
+                    if (selectParams["daterange"] !== undefined) {
+                        let range = $('#targetRange').data('daterangepicker');
+                        let rangeStr = vulsrepo_date_range_params[selectParams["daterange"]];
+                        let fromto = range.ranges[rangeStr];
+                        range.setStartDate(fromto[0]);
+                        range.setEndDate(fromto[1]);
+                        setDateRangePickerHTML(range.startDate, range.endDate);
+                        selectTreeItem();
+                    } else if (selectParams["datefrom"] !== undefined && selectParams["dateto"] !== undefined) {
+                        let range = $('#targetRange').data('daterangepicker');
+                        range.setStartDate(moment(selectParams["datefrom"]));
+                        range.setEndDate(moment(selectParams["dateto"]));
+                        setDateRangePickerHTML(range.startDate, range.endDate);
+                        selectTreeItem();
+                    } else if (selectParams["time"] !== undefined) {
+                        $("#folderTree").dynatree("getRoot").visit(function(node) {
+                            if (node.getLevel() === 1) {
+                                let scantime = node.data.title;
+                                let start = selectParams["time"];
+                                if (start === scantime) {
+                                    if (isCheckNull(node.childList) === false) {
+                                        node.childList.forEach(child => {
+                                            if (selectParams["servers"].includes(child.data.title) === true) {
+                                                child.select(true);
+                                            } else {
+                                                child.select(false);
+                                            }
+                                        });
+                                    }
+                                } else {
+                                    // out of range date
+                                    if (isCheckNull(node.childList) === false) {
+                                        node.childList.forEach(child => {
+                                            child.select(false);
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    $('#drawerLeft').hide();
+                    setTimeout(initData, 500);
+                } catch (e) {
+                    showAlert("param parse error", e);
+                    return;
+                }
+            }
         },
         minExpandLevel: 1,
         persist: false,
@@ -2253,7 +2329,6 @@ const displayDetail = function(cveID) {
                         src = x_val.tags.join(", ");
                         x_val.tags.forEach(item => tags.add(item));
                         itemTag.push(...x_val.tags.map(tag => tag.replace(" ", "")));
-                        console.log(itemTag);
                     } else {
                         tags.add(src);
                         itemTag.push(src);
