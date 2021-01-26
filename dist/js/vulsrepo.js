@@ -8,7 +8,6 @@ $(document).ready(function() {
     restoreParam();
     setEvents();
     createFolderTree();
-    $('#drawerLeft').drawer('show');
 });
 
 const restoreParam = function() {
@@ -738,6 +737,7 @@ const createFolderTree = function() {
                         }
                     }
                     if (foundParam === false) {
+                        $('#drawerLeft').drawer('show');
                         return;
                     }
 
@@ -788,13 +788,14 @@ const createFolderTree = function() {
                             }
                         });
                     }
-
-                    $('#drawerLeft').hide();
                     setTimeout(initData, 500);
                 } catch (e) {
                     showAlert("param parse error", e);
+                    $('#drawerLeft').drawer('show');
                     return;
                 }
+            } else {
+                $('#drawerLeft').drawer('show');
             }
         },
         minExpandLevel: 1,
