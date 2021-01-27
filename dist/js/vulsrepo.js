@@ -82,8 +82,6 @@ const initPivotTable = function() {
     $.blockUI(blockUIoption);
     setTimeout(function() {
         displayPivot(vulsrepo.detailPivotData);
-        setPulldown("#drop_topmenu", true);
-        setPulldownDisplayChangeEvent("#drop_topmenu");
         $("#open_print_preview").show();
         $.unblockUI(blockUIoption);
     }, 500);
@@ -308,6 +306,30 @@ const setEvents = function() {
         return false;
     });
 
+    // ---filter
+    setPulldown("#drop_topmenu", true);
+    if (location.search !== "") {
+        try {
+            let param = [...new URLSearchParams(location.search).entries()].reduce((obj, e) => ({...obj, [e[0]]: e[1]}), {});
+            if (param["filter"] !== undefined) {
+                let val = param["filter"];
+                let conf = db.getPivotConf(val);
+                if (conf !== null) {
+                    $("#drop_topmenu_visibleValue").text(val);
+                    $("#drop_topmenu_hiddenValue").text(val);
+                    db.set("vulsrepo_pivot_conf", conf);
+                    db.remove("vulsrepo_pivot_conf_tmp");
+                    filterDisp.on("#label_pivot_conf");
+                    let matchDefault = isDefaultFilter(val);
+                    $("#delete_pivot_conf").prop("disabled", matchDefault);
+                }
+            }
+        } catch (e) {
+            showAlert("param parse error", e);
+        }
+    }
+    setPulldownDisplayChangeEvent("#drop_topmenu");
+
     // ---pivot setting
     $("#save_pivot_conf").click(function() {
         $("#alert_saveDiag_textbox").css("display", "none");
@@ -389,6 +411,8 @@ const setEvents = function() {
             $("#drop_topmenu_visibleValue").html("Select filter");
             $("#drop_topnemu_hiddenValue").val("");
             fadeAlert("#alert_pivot_conf");
+            setPulldown("#drop_topmenu", true);
+            setPulldownDisplayChangeEvent("#drop_topmenu");
             initPivotTable();
         }
     });
