@@ -769,6 +769,11 @@ const createFolderTree = function() {
                     let slimselect = document.querySelector("#targetServer").slim;
                     if (selectParams["servers"] === undefined) {
                         selectParams["servers"] = [];
+                    } else if (selectParams["servers"].includes("all") === true) {
+                        let curData = slimselect.data.data;
+                        let exclude = ["", "Select None", "Select All"];
+                        let values = curData.slice().map(cur => cur.value);
+                        selectParams["servers"] = values.filter(val => !exclude.includes(val));
                     }
                     slimselect.set(selectParams["servers"]);
 
