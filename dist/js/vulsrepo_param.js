@@ -38,3 +38,21 @@ const vulsrepo_params = {
     vulsrepo_chkOwaspTopTen2017: "boolean",
     vulsrepo_chkSansTop25: "boolean"
 };
+
+const vulsrepo_direct_params = {
+    server: "string",
+    daterange: "string",
+    datefrom: "string",
+    dateto: "string",
+    time: "string"
+};
+
+const vulsrepo_date_range_params = {
+    today: 'Today',
+    yesterday: 'Yesterday',
+    last7days: 'Last 7 Days',
+    last30days: 'Last 30 Days',
+    thismonth: 'This Month',
+    lastmonth: 'Last Month',
+    alldays: 'All Days'
+}

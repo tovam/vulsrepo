@@ -8,7 +8,6 @@ $(document).ready(function() {
     restoreParam();
     setEvents();
     createFolderTree();
-    $('#drawerLeft').drawer('show');
 });
 
 const restoreParam = function() {
@@ -83,8 +82,6 @@ const initPivotTable = function() {
     $.blockUI(blockUIoption);
     setTimeout(function() {
         displayPivot(vulsrepo.detailPivotData);
-        setPulldown("#drop_topmenu", true);
-        setPulldownDisplayChangeEvent("#drop_topmenu");
         $("#open_print_preview").show();
         $.unblockUI(blockUIoption);
     }, 500);
@@ -309,6 +306,30 @@ const setEvents = function() {
         return false;
     });
 
+    // ---filter
+    setPulldown("#drop_topmenu", true);
+    if (location.search !== "") {
+        try {
+            let param = [...new URLSearchParams(location.search).entries()].reduce((obj, e) => ({...obj, [e[0]]: e[1]}), {});
+            if (param["filter"] !== undefined) {
+                let val = param["filter"];
+                let conf = db.getPivotConf(val);
+                if (conf !== null) {
+                    $("#drop_topmenu_visibleValue").text(val);
+                    $("#drop_topmenu_hiddenValue").text(val);
+                    db.set("vulsrepo_pivot_conf", conf);
+                    db.remove("vulsrepo_pivot_conf_tmp");
+                    filterDisp.on("#label_pivot_conf");
+                    let matchDefault = isDefaultFilter(val);
+                    $("#delete_pivot_conf").prop("disabled", matchDefault);
+                }
+            }
+        } catch (e) {
+            showAlert("param parse error", e);
+        }
+    }
+    setPulldownDisplayChangeEvent("#drop_topmenu");
+
     // ---pivot setting
     $("#save_pivot_conf").click(function() {
         $("#alert_saveDiag_textbox").css("display", "none");
@@ -390,6 +411,8 @@ const setEvents = function() {
             $("#drop_topmenu_visibleValue").html("Select filter");
             $("#drop_topnemu_hiddenValue").val("");
             fadeAlert("#alert_pivot_conf");
+            setPulldown("#drop_topmenu", true);
+            setPulldownDisplayChangeEvent("#drop_topmenu");
             initPivotTable();
         }
     });
@@ -720,6 +743,89 @@ const createFolderTree = function() {
                 }
             }
             initServerSelector(Array.from(lastServers), Array.from(servers).sort());
+
+            if (location.search !== "") {
+                try {
+                    let param = [...new URLSearchParams(location.search).entries()].reduce((obj, e) => ({...obj, [e[0]]: e[1]}), {});
+                    let selectParams = [];
+                    let foundParam = false;
+                    for (let [key, type] of Object.entries(vulsrepo_direct_params)) {
+                        if (param[key] !== undefined) {
+                            foundParam = true;
+                            if (key === "server") {
+                                selectParams["servers"] = param[key].split(' ');
+                            } else {
+                                // 2021-01-13T13:17:12+09:00 -> 2021-01-13T13:17:12 09:00 -> 2021-01-13T13:17:12+09:00
+                                selectParams[key] = param[key].replace(' ', '+');
+                            }
+                        }
+                    }
+                    if (foundParam === false) {
+                        $('#drawerLeft').drawer('show');
+                        return;
+                    }
+
+                    // select server
+                    let slimselect = document.querySelector("#targetServer").slim;
+                    if (selectParams["servers"] === undefined) {
+                        selectParams["servers"] = [];
+                    } else if (selectParams["servers"].includes("all") === true) {
+                        let curData = slimselect.data.data;
+                        let exclude = ["", "Select None", "Select All"];
+                        let values = curData.slice().map(cur => cur.value);
+                        selectParams["servers"] = values.filter(val => !exclude.includes(val));
+                    }
+                    slimselect.set(selectParams["servers"]);
+
+                    if (selectParams["daterange"] !== undefined) {
+                        let range = $('#targetRange').data('daterangepicker');
+                        let rangeStr = vulsrepo_date_range_params[selectParams["daterange"]];
+                        let fromto = range.ranges[rangeStr];
+                        range.setStartDate(fromto[0]);
+                        range.setEndDate(fromto[1]);
+                        setDateRangePickerHTML(range.startDate, range.endDate);
+                        selectTreeItem();
+                    } else if (selectParams["datefrom"] !== undefined && selectParams["dateto"] !== undefined) {
+                        let range = $('#targetRange').data('daterangepicker');
+                        range.setStartDate(moment(selectParams["datefrom"]));
+                        range.setEndDate(moment(selectParams["dateto"]));
+                        setDateRangePickerHTML(range.startDate, range.endDate);
+                        selectTreeItem();
+                    } else if (selectParams["time"] !== undefined) {
+                        $("#folderTree").dynatree("getRoot").visit(function(node) {
+                            if (node.getLevel() === 1) {
+                                let scantime = node.data.title;
+                                let start = selectParams["time"];
+                                if (start === scantime) {
+                                    if (isCheckNull(node.childList) === false) {
+                                        node.childList.forEach(child => {
+                                            if (selectParams["servers"].includes(child.data.title) === true) {
+                                                child.select(true);
+                                            } else {
+                                                child.select(false);
+                                            }
+                                        });
+                                    }
+                                } else {
+                                    // out of range date
+                                    if (isCheckNull(node.childList) === false) {
+                                        node.childList.forEach(child => {
+                                            child.select(false);
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    setTimeout(initData, 500);
+                } catch (e) {
+                    showAlert("param parse error", e);
+                    $('#drawerLeft').drawer('show');
+                    return;
+                }
+            } else {
+                $('#drawerLeft').drawer('show');
+            }
         },
         minExpandLevel: 1,
         persist: false,
@@ -2253,7 +2359,6 @@ const displayDetail = function(cveID) {
                         src = x_val.tags.join(", ");
                         x_val.tags.forEach(item => tags.add(item));
                         itemTag.push(...x_val.tags.map(tag => tag.replace(" ", "")));
-                        console.log(itemTag);
                     } else {
                         tags.add(src);
                         itemTag.push(src);
