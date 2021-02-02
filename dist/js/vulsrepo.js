@@ -974,9 +974,20 @@ const createPivotData = function(resultArray) {
 
                     let pkgInfo;
                     let libInfo;
+                    let wpInfo;
                     if (libPath === undefined) {
                         libPath = "";
                         pkgInfo = x_val.data.packages[pkgName];
+                        if (y_val.wpPackageFixStats !== undefined) {
+                            x_val.data.WordPressPackages.forEach(package => {
+                                if (package.name === p_val.name) {
+                                    wpInfo = package;
+                                    if (pkgName === "core") {
+                                        pkgName = "WordPress core";
+                                    }
+                                }
+                            });
+                        }
                     } else {
                         libInfo = getLibraryInformation(x_val.data.libraries, pkgName, libPath);
                     }
@@ -1170,6 +1181,23 @@ const createPivotData = function(resultArray) {
                         if (processFlag !== "false") {
                             result["PortScannable"] = "";
                             result["Process"] = "";
+                        }
+                    } else if (wpInfo !== undefined) {
+                        // === for WordPress
+                        result["PackageVer"] = wpInfo.version;
+                        result["NewPackageVer"] = "";
+                        result["Changelog"] = "None";
+                        result["Repository"] = ""
+                        if (processFlag !== "false") {
+                            result["PortScannable"] = "";
+                            result["Process"] = "";
+                        }
+                        if (wpInfo.type === "core") {
+                            result["Status"] = "";
+                            result["Update"] = "";
+                        } else {
+                            result["Status"] = wpInfo.status;
+                            result["Update"] = wpInfo.update;
                         }
                     } else {
                         // ===for cpe
@@ -2589,6 +2617,15 @@ const getTargetPackages = function(scannedCve) {
         targets = scannedCve.affectedPackages;
     } else if(isCheckNull(scannedCve.libraryFixedIns) === false) {
         targets = scannedCve.libraryFixedIns;
+    } else if(isCheckNull(scannedCve.wpPackageFixStats) === false) {
+        scannedCve.wpPackageFixStats.forEach(pkg => {
+            // WordPress core is version number
+            let reg = new RegExp(/^[0-9]*$/);
+            if (reg.test(pkg.name) === true) {
+                pkg.name = "core";
+            }
+        });
+        targets = scannedCve.wpPackageFixStats;
     }
 
     return targets;
