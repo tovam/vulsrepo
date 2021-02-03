@@ -505,7 +505,7 @@ const setEvents = function() {
         db.set("vulsrepo_pivotPriorityOff", priorityOff);
     }
 
-    if (priority != null && priority.length + priorityOff.length !== 10) {
+    if (priority != null && priority.length + priorityOff.length !== vulsrepo.detailTaget.length) {
         $.each(vulsrepo.detailTaget, function(i, i_val) {
             if (priority.indexOf(i_val) == -1 && priorityOff.indexOf(i_val) == -1) {
                 priority.push(i_val);
@@ -937,8 +937,11 @@ const createPivotData = function(resultArray) {
                 "Process": "healthy",
                 "Published": "healthy",
                 "Last Modified": "healthy",
-                "Reported Version": x_val.data.reportedVersion.replace("v", "")
-            };
+                "Reported Version": x_val.data.reportedVersion.replace("v", ""),
+                "VulnType": "healthy",
+                "Status": "healthy",
+                "Update": "healthy"
+};
 
             result["ServerName"] = x_val.data.serverName;
 
@@ -1172,6 +1175,9 @@ const createPivotData = function(resultArray) {
                                 result["Process"] = "CHK-Process-" + y_val.cveID + "," + x_val.scanTime + "," + x_val.data.serverName + "," + x_val.data.container.name + "," + pkgName + "," + process;
                             }
                         }
+                        result["VulnType"] = "";
+                        result["Status"] = "";
+                        result["Update"] = "";
                     } else if (libInfo !== undefined) {
                         // === for library
                         result["PackageVer"] = libInfo.Version;
@@ -1182,6 +1188,9 @@ const createPivotData = function(resultArray) {
                             result["PortScannable"] = "";
                             result["Process"] = "";
                         }
+                        result["VulnType"] = "";
+                        result["Status"] = "";
+                        result["Update"] = "";
                     } else if (wpInfo !== undefined) {
                         // === for WordPress
                         result["PackageVer"] = wpInfo.version;
@@ -1192,6 +1201,7 @@ const createPivotData = function(resultArray) {
                             result["PortScannable"] = "";
                             result["Process"] = "";
                         }
+                        result["VulnType"] = y_val.vulnType;
                         if (wpInfo.type === "core") {
                             result["Status"] = "";
                             result["Update"] = "";
@@ -1209,6 +1219,9 @@ const createPivotData = function(resultArray) {
                             result["PortScannable"] = "";
                             result["Process"] = "";
                         }
+                        result["VulnType"] = "";
+                        result["Status"] = "";
+                        result["Update"] = "";
                     }
 
                     var getSummaryAndDate = function(target) {
@@ -1316,7 +1329,7 @@ const createPivotData = function(resultArray) {
                                 result["CVSS Score Type"] = target + "Advisory";
                             } else {
                                 result["CVSS Severity"] = "Unknown";
-                                result["CVSS Score Type"] = "Unknown";
+                                result["CVSS Score Type"] = target;
                             }
                         }
 
@@ -2282,6 +2295,18 @@ const displayDetail = function(cveID) {
         $("#typeName_amazon").append("Amazon");
     }
     $("#typeName_trivy").append("Trivy");
+
+    if (data.cveContents.wpscan !== undefined) {
+        if (data.cveID.indexOf('WPVDBID-') != -1) {
+            $("#typeName_wpscan").append("<a href=\"" + detailLink.wpscan.url + data.cveID.replace("WPVDBID-", "") + "\" rel='noopener noreferrer' target='_blank'>WordPress</a>");
+        } else if (data.cveContents.wpscan.sourceLink !== "") {
+            $("#typeName_wpscan").append("<a href=\"" + data.cveContents.wpscan.sourceLink + "\" rel='noopener noreferrer' target='_blank'>WordPress</a>");
+        } else {
+            $("#typeName_wpscan").append("WordPress");
+        }
+    } else {
+        $("#typeName_wpscan").append("WordPress");
+    }
 
     // ---USCERT/JPCERT---
     let countCert = 0;
