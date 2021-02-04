@@ -941,7 +941,7 @@ const createPivotData = function(resultArray) {
                 "VulnType": "healthy",
                 "Status": "healthy",
                 "Update": "healthy"
-};
+            };
 
             result["ServerName"] = x_val.data.serverName;
 
