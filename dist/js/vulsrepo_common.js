@@ -704,6 +704,10 @@ const detailLink = {
         url: "https://linux.oracle.com/errata/",
         disp: "OracleLinux Errata"
     },
+    wpscan: {
+        url: "https://wpscan.com/vulnerability/",
+        disp: "WPScan WordPress Vulnerability Database"
+    },
     cweTopTwentyfive2019: {
         url: "https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html",
         disp: "CWE Top 25"
