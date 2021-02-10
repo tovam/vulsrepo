@@ -978,6 +978,7 @@ const createPivotData = function(resultArray) {
                     let pkgInfo;
                     let libInfo;
                     let wpInfo;
+                    let githubsainfo;
                     if (libPath === undefined) {
                         libPath = "";
                         pkgInfo = x_val.data.packages[pkgName];
@@ -992,7 +993,13 @@ const createPivotData = function(resultArray) {
                             });
                         }
                     } else {
-                        libInfo = getLibraryInformation(x_val.data.libraries, pkgName, libPath);
+                        if (y_val.gitHubSecurityAlerts !== undefined) {
+                            // GitHub SA
+                            githubsainfo = getGitHubSecurityAlertInformation(y_val.gitHubSecurityAlerts, pkgName, libPath);
+                        } else {
+                            // lockfile etc.
+                            libInfo = getLibraryInformation(x_val.data.libraries, pkgName, libPath);
+                        }
                     }
 
                     let errors = "";
@@ -1014,8 +1021,15 @@ const createPivotData = function(resultArray) {
                         "Path": libPath,
                         "NotFixedYet": NotFixedYet,
                         "FixedIn": fixedIn,
-                        "FixState": fixState
-                    };
+                        "FixState": fixState,
+                        "VulnType": "",
+                        "Status": "",
+                        "Update": "",
+                        "AffectedRange": "",
+                        "Dismissed": "",
+                        "DismissedAt": "",
+                        "DismissReason": ""
+                        };
 
                     result["ServerName"] = x_val.data.serverName;
 
@@ -1175,9 +1189,6 @@ const createPivotData = function(resultArray) {
                                 result["Process"] = "CHK-Process-" + y_val.cveID + "," + x_val.scanTime + "," + x_val.data.serverName + "," + x_val.data.container.name + "," + pkgName + "," + process;
                             }
                         }
-                        result["VulnType"] = "";
-                        result["Status"] = "";
-                        result["Update"] = "";
                     } else if (libInfo !== undefined) {
                         // === for library
                         result["PackageVer"] = libInfo.Version;
@@ -1188,9 +1199,6 @@ const createPivotData = function(resultArray) {
                             result["PortScannable"] = "";
                             result["Process"] = "";
                         }
-                        result["VulnType"] = "";
-                        result["Status"] = "";
-                        result["Update"] = "";
                     } else if (wpInfo !== undefined) {
                         // === for WordPress
                         result["PackageVer"] = wpInfo.version;
@@ -1209,6 +1217,20 @@ const createPivotData = function(resultArray) {
                             result["Status"] = wpInfo.status;
                             result["Update"] = wpInfo.update;
                         }
+                    } else if (githubsainfo !== undefined) {
+                        // === for GitHubSecurityAlerts
+                        result["PackageVer"] = "Unknown";
+                        result["NewPackageVer"] = "Unknown";
+                        result["Changelog"] = "None";
+                        result["Repository"] = ""
+                        if (processFlag !== "false") {
+                            result["PortScannable"] = "";
+                            result["Process"] = "";
+                        }
+                        result["AffectedRange"] = githubsainfo.affectedRange;
+                        result["Dismissed"] = githubsainfo.dismissed;
+                        result["DismissedAt"] = githubsainfo.dismissedAt;
+                        result["DismissReason"] = githubsainfo.dismissReason;
                     } else {
                         // ===for cpe
                         result["PackageVer"] = "Unknown";
@@ -1219,9 +1241,6 @@ const createPivotData = function(resultArray) {
                             result["PortScannable"] = "";
                             result["Process"] = "";
                         }
-                        result["VulnType"] = "";
-                        result["Status"] = "";
-                        result["Update"] = "";
                     }
 
                     var getSummaryAndDate = function(target) {
@@ -1888,7 +1907,7 @@ const displayDetail = function(cveID) {
             if (target === "ubuntu" || target === "debian" || target === "debian_security_tracker" || target === "amazon") {
                 $("#scoreText_" + dest).removeClass();
                 $("#scoreText_" + dest).text(severityV2).addClass("cvss-" + severityV2);
-            } else if (target === "trivy") {
+            } else if (target === "trivy" || target === "github") {
                 $("#scoreText_" + dest).removeClass();
                 $("#scoreText_" + dest).text(severityV3).addClass("cvss-" + severityV3);
             } else if (target === "oracle" && isCheckNull(data.DistroAdvisories) === false) {
@@ -2307,6 +2326,11 @@ const displayDetail = function(cveID) {
     } else {
         $("#typeName_wpscan").append("WordPress");
     }
+    if (data.cveContents.github !== undefined) {
+        $("#typeName_github").append("<a href=\"" + data.cveContents.github.sourceLink + "\" rel='noopener noreferrer' target='_blank'>GitHub</a>");
+    } else {
+        $("#typeName_github").append("GitHub");
+    }
 
     // ---USCERT/JPCERT---
     let countCert = 0;
@@ -2651,9 +2675,32 @@ const getTargetPackages = function(scannedCve) {
             }
         });
         targets = scannedCve.wpPackageFixStats;
+    } else if (isCheckNull(scannedCve.gitHubSecurityAlerts) === false) {
+        scannedCve.gitHubSecurityAlerts.forEach(pkg => {
+            let pkgName = pkg.packageName.split(" ");
+            pkg["path"] = pkgName[0];
+            pkg["name"] = pkgName[1];
+        });
+        targets = scannedCve.gitHubSecurityAlerts;
     }
 
     return targets;
+};
+
+const getGitHubSecurityAlertInformation = function(alerts, pkgName, libPath) {
+    let libInfo;
+
+    if (libPath === undefined) {
+        return;
+    }
+
+    $.each(alerts, function(l, l_val) {
+        if (l_val.path === libPath && l_val.name === pkgName) {
+            libInfo = l_val;
+        }
+    });
+
+    return libInfo;
 };
 
 const getLibraryInformation = function(libraries, pkgName, libPath) {
