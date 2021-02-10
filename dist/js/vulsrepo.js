@@ -1126,7 +1126,7 @@ const createPivotData = function(resultArray) {
                     result["DetectionMethod"] = DetectionMethod;
                     result["ConfidenceScore"] = y_val.confidences[0].score;
                     if (pkgInfo !== undefined) {
-                        if (pkgInfo.changelog !== undefined && pkgInfo.changelog.contents !== "") {
+                        if (pkgInfo.changelog !== undefined && pkgInfo.changelog.contents !== undefined && pkgInfo.changelog.contents !== "") {
                             result["Changelog"] = "CHK-changelog-" + y_val.cveID + "," + x_val.scanTime + "," + x_val.data.serverName + "," + x_val.data.container.name + "," + pkgName;
                         } else {
                             result["Changelog"] = "None";
@@ -2839,7 +2839,7 @@ const displayChangelogDetail = function(ankerData) {
             packageInfo = packageInfo + " (" + pkgContents.repository + ")";
         }
         $("#changelog-packagename").append(packageInfo);
-        if (changelogInfo.pkgContents.changelog.contents === "") {
+        if (changelogInfo.pkgContents.changelog === undefined || changelogInfo.pkgContents.changelog.contents === undefined || changelogInfo.pkgContents.changelog.contents === "") {
             $("#changelog-contents").append("NO DATA");
         } else {
             $.each(shapeChangelog(changelogInfo.pkgContents.changelog.contents, cveid), function (y, y_val) {
