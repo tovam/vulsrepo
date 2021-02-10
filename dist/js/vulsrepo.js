@@ -2706,7 +2706,7 @@ const createDetailPackageData = function(cveID) {
 
                     if (pkgName.indexOf('cpe:/') != -1) {
                         tmp_Map["Path"] = "";
-                        tmp_Map["PackageName"] = '<a href="#contents" class="lightbox" data-cveid="' + cveID + '" data-scantime="' + x_val.scanTime + '" data-server="' + x_val.data.serverName + '" data-container="' + x_val.data.container.name + '" data-package="' + pkgName + '">' + pkgName + '</a>';
+                        tmp_Map["PackageName"] = pkgName;
                         tmp_Map["PackageVersion"] = "";
                         tmp_Map["PackageRelease"] = "";
                         tmp_Map["PackageNewVersion"] = "";
