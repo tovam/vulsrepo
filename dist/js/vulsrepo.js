@@ -982,15 +982,11 @@ const createPivotData = function(resultArray) {
                     if (libPath === undefined) {
                         libPath = "";
                         pkgInfo = x_val.data.packages[pkgName];
-                        if (y_val.wpPackageFixStats !== undefined) {
-                            x_val.data.WordPressPackages.forEach(package => {
-                                if (package.name === p_val.name) {
-                                    wpInfo = package;
-                                    if (pkgName === "core") {
-                                        pkgName = "WordPress core";
-                                    }
-                                }
-                            });
+                        wpInfo = getWordPressInformation(x_val.data.WordPressPackages, pkgName, y_val.wpPackageFixStats);
+                        if (wpInfo !== undefined) {
+                            if (pkgName === "core") {
+                                pkgName = "WordPress core";
+                            }
                         }
                     } else {
                         libInfo = getLibraryInformation(x_val.data.libraries, pkgName, libPath);
@@ -2693,6 +2689,22 @@ const getLibraryInformation = function(libraries, pkgName, libPath) {
     return libInfo;
 };
 
+const getWordPressInformation = function(wordPressPackages, pkgName, wpPackageFixStats) {
+    let wpInfo;
+
+    if (wpPackageFixStats === undefined) {
+        return;
+    }
+
+    wordPressPackages.forEach(package => {
+        if (package.name === pkgName) {
+            wpInfo = package;
+        }
+    });
+
+    return wpInfo;
+};
+
 const createDetailPackageData = function(cveID) {
     var array = [];
     $.each(vulsrepo.detailRawData, function(x, x_val) {
@@ -2714,6 +2726,7 @@ const createDetailPackageData = function(cveID) {
                     }
 
                     let libInfo =  getLibraryInformation(x_val.data.libraries, pkgName, libPath);
+                    let wpInfo = getWordPressInformation(x_val.data.WordPressPackages, pkgName, y_val.wpPackageFixStats);
 
                     let tmp_Map = {
                         ScanTime: x_val.scanTime,
@@ -2747,6 +2760,20 @@ const createDetailPackageData = function(cveID) {
                         tmp_Map["Path"] = libPath;
                         tmp_Map["PackageName"] = '<a href="#contents" class="lightbox" data-cveid="' + cveID + '" data-scantime="' + x_val.scanTime + '" data-server="' + x_val.data.serverName + '" data-container="' + x_val.data.container.name + '" data-package="' + pkgName + '">' + pkgName + '</a>';
                         tmp_Map["PackageVersion"] = libInfo.Version;
+                        tmp_Map["PackageRelease"] = "";
+                        tmp_Map["PackageNewVersion"] = "";
+                        tmp_Map["PackageNewRelease"] = "";
+                        tmp_Map["Repository"] = "";
+                        tmp_Map["NotFixedYet"] = NotFixedYet;
+                        tmp_Map["FixedIn"] = fixedIn;
+                        tmp_Map["FixState"] = fixState;
+                    } else if (wpInfo !== undefined) {
+                        if (pkgName === "core") {
+                            pkgName = "WordPress core";
+                        }
+                        tmp_Map["Path"] = "";
+                        tmp_Map["PackageName"] = pkgName;
+                        tmp_Map["PackageVersion"] = wpInfo.version;
                         tmp_Map["PackageRelease"] = "";
                         tmp_Map["PackageNewVersion"] = "";
                         tmp_Map["PackageNewRelease"] = "";
