@@ -940,7 +940,8 @@ const createPivotData = function(resultArray) {
                 "Reported Version": x_val.data.reportedVersion.replace("v", ""),
                 "VulnType": "healthy",
                 "Status": "healthy",
-                "Update": "healthy"
+                "Update": "healthy",
+                "Diff": "healthy"
             };
 
             result["ServerName"] = x_val.data.serverName;
@@ -1012,6 +1013,11 @@ const createPivotData = function(resultArray) {
                         "FixedIn": fixedIn,
                         "FixState": fixState
                     };
+                    if (y_val.diffStatus !== undefined) {
+                        result["Diff"] = y_val.diffStatus;
+                    } else {
+                        result["Diff"] = "";
+                    }
 
                     result["ServerName"] = x_val.data.serverName;
 
@@ -1316,7 +1322,7 @@ const createPivotData = function(resultArray) {
                             result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss2Severity);
                             result["CVSS Score Type"] = target;
                         } else {
-                            result["CVSS Score"] = "-";
+                            result["CVSS Score"] = "";
                             if (y_val.cveContents[target].cvss3Severity !== "") {
                                 result["CVSS Severity"] = toUpperFirstLetter(y_val.cveContents[target].cvss3Severity);
                                 result["CVSS Score Type"] = target;
@@ -1586,6 +1592,17 @@ const displayPivot = function(array) {
             $("#pivot_base").find("th:contains('Fixed')").each(function() {
                 if ($(this).text() === "Fixed") {
                     $(this).addClass("notfixyet-false");
+                }
+            });
+
+            $("#pivot_base").find("th:contains('+')").each(function() {
+                if ($(this).text() === "+") {
+                    $(this).addClass("diff-plus");
+                }
+            });
+            $("#pivot_base").find("th:contains('-')").each(function() {
+                if ($(this).text() === "-") {
+                    $(this).addClass("diff-minus");
                 }
             });
 
