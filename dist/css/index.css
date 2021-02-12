@@ -21,6 +21,20 @@ body {
     font-weight: bold;
 }
 
+.diff-plus {
+    background-color: #39A869 !important;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
+.diff-minus {
+    background-color: #CB4829 !important;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
 .my-button {
     width: 70px;
 }
