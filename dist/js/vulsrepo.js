@@ -940,7 +940,11 @@ const createPivotData = function(resultArray) {
                 "Reported Version": x_val.data.reportedVersion.replace("v", ""),
                 "VulnType": "healthy",
                 "Status": "healthy",
-                "Update": "healthy"
+                "Update": "healthy",
+                "AffectedRange": "healthy",
+                "Dismissed": "healthy",
+                "DismissedAt": "healthy",
+                "DismissReason": "healthy"
             };
 
             result["ServerName"] = x_val.data.serverName;
@@ -1229,7 +1233,11 @@ const createPivotData = function(resultArray) {
                         }
                         result["AffectedRange"] = githubsainfo.affectedRange;
                         result["Dismissed"] = githubsainfo.dismissed;
-                        result["DismissedAt"] = githubsainfo.dismissedAt;
+                        if (githubsainfo.dismissedAt !== "0001-01-01T00:00:00Z") {
+                            result["DismissedAt"] = githubsainfo.dismissedAt;
+                        } else {
+                            result["DismissedAt"] = "------";
+                        }
                         result["DismissReason"] = githubsainfo.dismissReason;
                     } else {
                         // ===for cpe
@@ -2677,6 +2685,7 @@ const getTargetPackages = function(scannedCve) {
         targets = scannedCve.wpPackageFixStats;
     } else if (isCheckNull(scannedCve.gitHubSecurityAlerts) === false) {
         scannedCve.gitHubSecurityAlerts.forEach(pkg => {
+            // repository package
             let pkgName = pkg.packageName.split(" ");
             pkg["path"] = pkgName[0];
             pkg["name"] = pkgName[1];
