@@ -912,6 +912,7 @@ const createPivotData = function(resultArray) {
                 "CVSS Score": "healthy",
                 "CVSS Score Type": "healthy",
                 "CVSS Severity": "healthy",
+                "Attack": "healthy",
                 "CVSSv3 (AV)": "healthy",
                 "CVSSv3 (AC)": "healthy",
                 "CVSSv3 (PR)": "healthy",
@@ -1362,6 +1363,23 @@ const createPivotData = function(resultArray) {
                             }
                         }
 
+                        // "cvss2Vector", "cvss3Vector" or "attack range"
+                        if (y_val.cveContents[target].cvss3Vector !== "") {
+                            let arrayVector = getSplitArray(y_val.cveContents[target].cvss3Vector);
+                            let cvssv3 = getVectorV3.cvss(arrayVector[1], "");
+                            result["Attack"] = cvssv3[0];
+                        } else if (y_val.cveContents[target].cvss2Vector !== "") {
+                            let arrayVector = getSplitArray(y_val.cveContents[target].cvss2Vector);
+                            let cvssv2 = getVectorV2.cvss(arrayVector[0], "");
+                            result["Attack"] = cvssv2[0];
+                        } else if (target === "debian_security_tracker" &&
+                            y_val.cveContents[target].optional !== undefined &&
+                            y_val.cveContents[target].optional["attack range"] !== undefined) {
+                            result["Attack"] = y_val.cveContents[target].optional["attack range"].toUpperCase();
+                        } else {
+                            result["Attack"] = "";
+                        }
+
                         if (cvssFlag !== "false") {
                             if (y_val.cveContents[target].cvss3Vector !== "") { //ex) CVE-2016-5483
                                 var arrayVector = getSplitArray(y_val.cveContents[target].cvss3Vector);
@@ -1429,6 +1447,7 @@ const createPivotData = function(resultArray) {
                         result["CVSS Score"] = "Unknown";
                         result["CVSS Severity"] = "Unknown";
                         result["CVSS Score Type"] = "Unknown";
+                        result["Attack"] = "";
                         result["CVSSv3 (AV)"] = "Unknown";
                         result["CVSSv3 (AC)"] = "Unknown";
                         result["CVSSv3 (PR)"] = "Unknown";
