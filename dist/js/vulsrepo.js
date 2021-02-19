@@ -1523,13 +1523,19 @@ const displayPivot = function(array) {
             c3: {
                 data: {
                     colors: {
+                        healthy: "lightskyblue",
                         Unknown: "#666666",
                         Critical: "#cb4829",
                         High: "#d59533",
                         Important: "#d59533",
                         Medium: "#dfd238",
                         Moderate: "#dfd238",
-                        Low: "#93b447"
+                        Low: "#93b447",
+                        Negligible: "#61C1BE",
+                        Unimportant: "#61C1BE",
+                        Pending: "#796BAF",
+                        "Not Vulnerable": "#BA79B1",
+                        "Not yet assigned": "#e6AAAA"
                     }
                 }
             },
