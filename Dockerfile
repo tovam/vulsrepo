@@ -1,4 +1,4 @@
-FROM golang:alpine as builder
+FROM golang:1.15-alpine as builder
 
 RUN apk --no-cache add git
 
@@ -6,8 +6,7 @@ ENV REPOSITORY github.com/ishiDACo/vulsrepo
 
 COPY . $GOPATH/src/$REPOSITORY
 RUN cd $GOPATH/src/$REPOSITORY/server \
-    && go get -u github.com/golang/dep/... \
-    && dep ensure \
+    && go mod download \
     && go build -ldflags "-s -w" -o $GOPATH/bin/vulsrepo-server
 
 RUN mkdir /vulsrepo \
