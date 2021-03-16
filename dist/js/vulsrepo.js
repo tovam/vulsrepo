@@ -881,7 +881,7 @@ const createPivotData = function(resultArray) {
     const sansTop25Flag = db.get("vulsrepo_chkSansTop25");
 
     $.each(resultArray, function(x, x_val) {
-        if (Object.keys(x_val.data.scannedCves).length === 0) {
+        if (isCheckNull(x_val.data.scannedCves) === true || Object.keys(x_val.data.scannedCves).length === 0) {
 
             let errors = "";
             if (isCheckNull(x_val.data.errors) === false) {
