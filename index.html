@@ -81,7 +81,7 @@
     <nav class="navbar navbar-inverse">
 
         <div class="navbar-header">
-            <a id="toolName" class="navbar-brand">VulsRepo <span id="toolVersion">v0.6.2</span></a>
+            <a id="toolName" class="navbar-brand">VulsRepo <span id="toolVersion">v0.6.3</span></a>
         </div>
         <div class="collapse navbar-collapse">
             <button id="Setting" type="button" class="btn btn-default navbar-btn glyphicon glyphicon-wrench pull-right"></button>
@@ -129,8 +129,8 @@
     </div>
 
     <div class="modal fade" id="modal-detail" tabindex="-1" aria-labelledby="myLargeModalLabel">
-        <div class="modal-dialog">
-            <div class="modal-content large">
+        <div class="modal-dialog modal-dialog-fluid">
+            <div class="modal-content">
                 <div class="modal-header bg-info">
                     <button type="button" class="close" data-dismiss="modal">
 						<span aria-hidden="true">&times;</span>
@@ -140,9 +140,9 @@
                 <div class="modal-body" style="padding-right: 0px;padding-left: 5px; padding-bottom: 0px;">
 
                     <div class="panel">
-                        <div class="panel-body" style="padding-left: 0px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px;">
+                        <div class="panel-body" style="padding-left: 0px; padding-top: 0px; padding-bottom: 0px;">
 
-                            <div class="col-xs-1" style="padding-left: 0px; padding-right: 0px;	width: 50px;">
+                            <div class="col-fixed-50">
                                 <ul class="nav nav-tabs tabs-left sideways">
                                     <li class="active">
                                         <a href="#main-r" data-toggle="tab">Main</a>
@@ -153,16 +153,16 @@
                                 </ul>
                             </div>
 
-                            <div class="col-xs-11" style="padding-left: 0px; padding-right: 0px; width: 1575px;">
+                            <div class="col-offset-50">
                                 <div class="tab-content">
                                     <div class="tab-pane active" id="main-r">
-                                        <div class="panel panel-info">
-                                            <div class="panel-body" id="cvss-detail">
+                                        <div class="panel panel-info container-fluid">
+                                            <div class="panel-body row" id="cvss-detail">
 
                                                 <p class="bg-primary">
                                                     CVSS Detail
                                                 </p>
-                                                <div class="col-xs-9" style="padding-left:0;">
+                                                <div class="col-lg-9" style="padding-left:0;">
                                                     <table class="table table-hover table-condensed font-size-small" style="margin-bottom:0;">
                                                         <tr id="typeRowHeader" class="active">
                                                             <th>Type</th>
@@ -253,7 +253,7 @@
 
                                                     </table>
                                                 </div>
-                                                <div class="col-xs-3" style="padding-left: 0px;">
+                                                <div class="col-lg-3" style="padding-left: 0px; margin-top: 5px;">
                                                     <ul class="nav nav-tabs">
                                                         <li>
                                                             <a data-toggle="tab" href="#tab_chart_v2">Cvss v2</a>
