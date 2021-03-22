@@ -40,7 +40,7 @@ body {
 }
 
 .my-input {
-    width: 500px;
+    width: 95%;
 }
 
 .my-input-pos {
@@ -236,12 +236,6 @@ a {
     background-color: rgb(250, 250, 250)
 }
 
-.modal-dialog-fluid {
-    max-width: inherit;
-    width: 98%;
-    margin-left: 15px;
-}
-
 .col-fixed-50 {
     width: 50px;
     position: fixed;
@@ -303,14 +297,16 @@ a.collapse {
   display: inline-block;
 }
 
-.modal .setting {
-    width: 1150px;
-    margin-left: -120px;
+.modal .detail {
+    max-width: inherit;
+    width: 90%;
+    margin-left: 5%;
 }
 
-.modal .large {
-    width: 1650px;
-    margin-left: -525px;
+.modal .setting {
+    max-width: inherit;
+    width: 80%;
+    margin-left: 10%;
 }
 
 table.cvss_tooltip {

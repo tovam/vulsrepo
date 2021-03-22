@@ -129,7 +129,7 @@
     </div>
 
     <div class="modal fade" id="modal-detail" tabindex="-1" aria-labelledby="myLargeModalLabel">
-        <div class="modal-dialog modal-dialog-fluid">
+        <div class="modal-dialog detail">
             <div class="modal-content">
                 <div class="modal-header bg-info">
                     <button type="button" class="close" data-dismiss="modal">
@@ -427,8 +427,8 @@
     </div>
 
     <div class="modal fade" id="modal-setting" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content setting">
+        <div class="modal-dialog setting">
+            <div class="modal-content">
                 <div class="modal-header bg-success">
                     <button type="button" class="close" data-dismiss="modal">
 						<span aria-hidden="true">&times;</span>
@@ -441,7 +441,7 @@
                         <h4>Pivot Table</h4>
                         <br>
                         <div class="row">
-                            <div class="col-sm-5">
+                            <div class="col-lg-5">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
                                         Show / Hide the Item
@@ -449,19 +449,19 @@
                                     <div class="panel-body">
                                         <div class="make-switch">
                                             <div class="row">
-                                                <div class="col-sm-4">
+                                                <div class="col-md-4">
                                                     <div class="checkbox">
                                                         <input type="checkbox" name="chkPivotSummary" data-label-text="Summary" checked>
                                                     </div>
                                                 </div>
-                                                <div class="col-sm-4">
+                                                <div class="col-md-4">
                                                     <div class="checkbox">
                                                         <input type="checkbox" name="chkPivotCvss" data-label-text="Cvss Metrics" checked>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="row">
-                                                <div class="col-sm-12">
+                                                <div class="col-md-12">
                                                     <div class="checkbox">
                                                         <input type="checkbox" name="chkPivotProcess" data-label-text="Affected Processes" checked>
                                                     </div>
@@ -473,21 +473,21 @@
                                         <p class="bg-primary">Attention CweID</p>
                                         <div class="make-switch">
                                             <div class="row">
-                                                <div class="col-sm-12">
+                                                <div class="col-md-12">
                                                     <div class="checkbox">
                                                         <input type="checkbox" name="chkCweTop25" data-label-text="2019 CWE Top 25 Most Dangerous Software Errors" checked>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="row">
-                                                <div class="col-sm-12">
+                                                <div class="col-md-12">
                                                     <div class="checkbox">
                                                         <input type="checkbox" name="chkOwaspTopTen2017" data-label-text="OWASP Top 10 - 2017">
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="row">
-                                                <div class="col-sm-12">
+                                                <div class="col-md-12">
                                                     <div class="checkbox">
                                                         <input type="checkbox" name="chkSansTop25" data-label-text="SANS Top 25 Software Errors">
                                                     </div>
@@ -498,19 +498,19 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-7">
+                            <div class="col-lg-7">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
                                         Priority
                                     </div>
                                     <div class="panel-body">
                                         <div class="row">
-                                            <div class="col-sm-6">
+                                            <div class="col-md-6">
                                                 <p class="bg-primary">Hide</p>
                                                 <ul id="pivot-priority-off" class="connectedSortable">
                                                 </ul>
                                             </div>
-                                            <div class="col-sm-6">
+                                            <div class="col-md-6">
                                                 <p class="bg-primary">Show</p>
                                                 <ul id="pivot-priority" class="connectedSortable">
                                                 </ul>
