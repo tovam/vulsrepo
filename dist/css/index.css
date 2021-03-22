@@ -238,8 +238,8 @@ a {
 
 .modal-dialog-fluid {
     max-width: inherit;
-    width: 98%;
-    margin-left: 15px;
+    width: 90%;
+    margin-left: 5%;
 }
 
 .col-fixed-50 {
