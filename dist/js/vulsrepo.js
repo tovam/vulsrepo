@@ -1965,8 +1965,13 @@ const displayDetail = function(cveID) {
             severityV3 = toUpperFirstLetter(cveContent.cvss3Severity);
 
             if (target === "ubuntu" || target === "debian" || target === "debian_security_tracker" || target === "amazon") {
-                $("#scoreText_" + dest).removeClass();
-                $("#scoreText_" + dest).text(severityV2).addClass("cvss-" + severityV2);
+                if (severityV2 === "") {
+                    $("#scoreText_" + dest).removeClass();
+                    $("#scoreText_" + dest).text(severityV3).addClass("cvss-" + severityV3);
+                } else {
+                    $("#scoreText_" + dest).removeClass();
+                    $("#scoreText_" + dest).text(severityV2).addClass("cvss-" + severityV2);
+                }
             } else if (target === "trivy" || target === "github") {
                 $("#scoreText_" + dest).removeClass();
                 $("#scoreText_" + dest).text(severityV3).addClass("cvss-" + severityV3);
