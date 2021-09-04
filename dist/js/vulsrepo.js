@@ -1095,31 +1095,59 @@ const createPivotData = function(resultArray) {
                         var cweIdsArray = [...cweIds];
                         let cweIdStr = "";
                         for (var j = 0; j < cweIdsArray.length; j++) {
-                            cweIdStr = cweIdStr + cweIdsArray[j];
-                            let match = false;
-                            let makeCweStr = function(source) {
-                                if (match === true) {
-                                    return;
-                                }
-                                for(var i = 0; i < cweTop[source].length; i++) {
-                                    if(cweIdsArray[j] === "CWE-" + cweTop[source][i]) {
-                                        match = true;
-                                        break;
+                            var makeCweStrs = function(id) {
+                                var str = id;
+                                let match = false;
+                                let makeCweStr = function(source) {
+                                    if (match === true) {
+                                        return;
                                     }
+                                    for(var i = 0; i < cweTop[source].length; i++) {
+                                        if(id === "CWE-" + cweTop[source][i]) {
+                                            match = true;
+                                            break;
+                                        }
+                                    }
+                                    if (match === true) {
+                                        str = str + "[!!]";
+                                    }
+                                };
+                                if (cweTop25Flag !== "false") {
+                                    makeCweStr("cweTop25");
                                 }
-                                if (match === true) {
-                                    cweIdStr = cweIdStr + "[!!]";
+                                if (owaspTopTen2017Flag !== "false") {
+                                    makeCweStr("owaspTopTen2017");
                                 }
+                                if (sansTop25Flag !== "false") {
+                                    makeCweStr("sansTop25");
+                                }
+                                return str;
                             };
-                            if (cweTop25Flag !== "false") {
-                                makeCweStr("cweTop25");
+
+                            var makedIds = [];
+                            var makedIdStr = "";
+                            if (cweIdsArray[j].indexOf("->") != -1) {
+                                // CWE-nn->CWE-nn..
+                                var ids = cweIdsArray[j].split("->");
+                                for (var id of ids) {
+                                    makedIds.push(makeCweStrs(id));
+                                }
+                                makedIdStr = makedIds.join('->');
+                            } else if (cweIdsArray[j].indexOf("|") != -1) {
+                                // (CWE-nn|CWE-nn..)
+                                var ids = cweIdsArray[j].replace('(', '');
+                                ids = ids.replace(')', '');
+                                ids = ids.split("|");
+                                for (var id of ids) {
+                                    makedIds.push(makeCweStrs(id));
+                                }
+                                makedIdStr = "(" + makedIds.join('|') + ")";
+                            } else {
+                                // CWE-nn
+                                makedIdStr = makeCweStrs(cweIdsArray[j])
                             }
-                            if (owaspTopTen2017Flag !== "false") {
-                                makeCweStr("owaspTopTen2017");
-                            }
-                            if (sansTop25Flag !== "false") {
-                                makeCweStr("sansTop25");
-                            }
+                            cweIdStr = cweIdStr + makedIdStr;
+
                             if (j < cweIdsArray.length - 1) {
                                 cweIdStr = cweIdStr + ", ";
                             }
@@ -1784,13 +1812,40 @@ const addCweIDLink = function() {
                 // NVD-CWE-Other and NVD-CWE-noinfo
                 generated = generated + cveids[i];
             } else {
-                if (isNVDHighPriority()) {
-                    // NVD
-                    generated = generated + "<a href=\"" + detailLink.cwe_nvd.url + cveids[i].replace(/\[!!\]/, "").replace(/CWE-/, "") + "\" rel='noopener noreferrer' target='_blank'>" + cveids[i] + "</a>";
+                var makeLink = function(id) {
+                    if (isNVDHighPriority()) {
+                        // NVD
+                        return "<a href=\"" + detailLink.cwe_nvd.url + id.replace(/\[!!\]/, "").replace(/CWE-/, "") + "\" rel='noopener noreferrer' target='_blank'>" + id + "</a>";
+                    } else {
+                        // JVN
+                        return "<a href=\"" + detailLink.cwe_jvn.url + id.replace(/\[!!\]/, "") + ".html\" rel='noopener noreferrer' target='_blank'>" + id + "</a>";
+                    }
+                };
+
+                var makedIds = [];
+                var makedIdStr = "";
+                if (cveids[i].indexOf("->") != -1) {
+                    // CWE-nn->CWE-nn..
+                    var ids = cveids[i].split("->");
+                    for (var id of ids) {
+                        makedIds.push(makeLink(id));
+                    }
+                    makedIdStr = makedIds.join('->');
+                } else if (cveids[i].indexOf("|") != -1) {
+                    // (CWE-nn|CWE-nn..)
+                    var ids = cveids[i].replace('(', '');
+                    ids = ids.replace(')', '');
+                    ids = ids.split("|");
+                    for (var id of ids) {
+                        makedIds.push(makeLink(id));
+                    }
+                    makedIdStr = "(" + makedIds.join('|') + ")";
                 } else {
-                    // JVN
-                    generated = generated + "<a href=\"" + detailLink.cwe_jvn.url + cveids[i].replace(/\[!!\]/, "") + ".html\" rel='noopener noreferrer' target='_blank'>" + cveids[i] + "</a>";
+                    // CWE-nn
+                    makedIdStr = makeLink(cveids[i])
                 }
+
+                generated = generated + makedIdStr;
             }
             if (i < cveids.length - 1) {
                 generated = generated + ", ";
