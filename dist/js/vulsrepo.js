@@ -849,6 +849,8 @@ const isCheckNull = function(o) {
         return true;
     } else if (o.length === 0) {
         return true;
+    } else if (o.size === 0) {
+        return true;
     }
     return false;
 }
@@ -875,6 +877,32 @@ const getCveContent = function(d) {
     } else {
         return d[0];
     }
+}
+
+const getCveContents = function(d) {
+    if (Array.isArray(d) === false) {
+        return [d];
+    } else {
+        return d;
+    }
+}
+
+const getCweIds = function(cveContents) {
+    var cweIds = new Set();
+    for (const cveContent of cveContents) {
+        if (isCheckNull(cveContent.cweIDs) === false) {
+            for (const cweId of cveContent.cweIDs) {
+                cweIds.add(cweId);
+            }
+        }
+    }
+    if (cweIds.has("NVD-CWE-Other") || cweIds.has("NVD-CWE-noinfo")) {
+        if (cweIds.size > 1) {
+            cweIds.delete("NVD-CWE-Other");
+            cweIds.delete("NVD-CWE-noinfo");
+        }
+    }
+    return cweIds;
 }
 
 const createPivotData = function(resultArray) {
@@ -1049,51 +1077,54 @@ const createPivotData = function(resultArray) {
                     result["ServerName"] = x_val.data.serverName;
 
                     var getCweId = function(target) {
-                        var cveContent = getCveContent(y_val.cveContents[target]);
                         if (y_val.cveContents === undefined ||
-                            y_val.cveContents[target] === undefined ||
-                            cveContent.cweIDs === undefined ) {
+                            y_val.cveContents[target] === undefined) {
                             return false;
                         }
-
-                        let cweIds = cveContent.cweIDs;
-                        let cweIdStr = "";
-                        // NVD-CWE-Other and NVD-CWE-noinfo
-                        if(cweIds[0].indexOf("NVD-CWE-") !== -1) {
-                            result["CweID"] = cweIds[0];
-                        } else {
-                            for(var j = 0; j < cweIds.length; j++) {
-                                cweIdStr = cweIdStr + cweIds[j];
-                                let match = false;
-                                let makeCweStr = function(source) {
-                                    if (match === true) {
-                                        return;
-                                    }
-                                    for(var i = 0; i < cweTop[source].length; i++) {
-                                        if(cweIds[j] === "CWE-" + cweTop[source][i]) {
-                                            match = true;
-                                            break;
-                                        }
-                                    }
-                                    if (match === true) {
-                                        cweIdStr = cweIdStr + "[!!]";
-                                    }
-                                };
-                                if (cweTop25Flag !== "false") {
-                                    makeCweStr("cweTop25");
-                                }
-                                if (owaspTopTen2017Flag !== "false") {
-                                    makeCweStr("owaspTopTen2017");
-                                }
-                                if (sansTop25Flag !== "false") {
-                                    makeCweStr("sansTop25");
-                                }
-                                if (j < cweIds.length - 1) {
-                                    cweIdStr = cweIdStr + ", ";
-                                }
-                            }
-                            result["CweID"] = "CHK-cweid-" + cweIdStr;
+                        var cveContents = getCveContents(y_val.cveContents[target]);
+                        var cweIds = getCweIds(cveContents);
+                        if (cweIds.size === 0) {
+                            return false;
                         }
+                        // NVD-CWE-Other and NVD-CWE-noinfo
+                        if (cweIds.size === 1 && (cweIds.has("NVD-CWE-Other") || cweIds.has("NVD-CWE-noinfo"))) {
+                            result["CweID"] = [...cweIds][0];
+                            return true;
+                        }
+
+                        var cweIdsArray = [...cweIds];
+                        let cweIdStr = "";
+                        for (var j = 0; j < cweIdsArray.length; j++) {
+                            cweIdStr = cweIdStr + cweIdsArray[j];
+                            let match = false;
+                            let makeCweStr = function(source) {
+                                if (match === true) {
+                                    return;
+                                }
+                                for(var i = 0; i < cweTop[source].length; i++) {
+                                    if(cweIdsArray[j] === "CWE-" + cweTop[source][i]) {
+                                        match = true;
+                                        break;
+                                    }
+                                }
+                                if (match === true) {
+                                    cweIdStr = cweIdStr + "[!!]";
+                                }
+                            };
+                            if (cweTop25Flag !== "false") {
+                                makeCweStr("cweTop25");
+                            }
+                            if (owaspTopTen2017Flag !== "false") {
+                                makeCweStr("owaspTopTen2017");
+                            }
+                            if (sansTop25Flag !== "false") {
+                                makeCweStr("sansTop25");
+                            }
+                            if (j < cweIdsArray.length - 1) {
+                                cweIdStr = cweIdStr + ", ";
+                            }
+                        }
+                        result["CweID"] = "CHK-cweid-" + cweIdStr;
                         return true;
                     };
 
@@ -1866,9 +1897,12 @@ const createDetailData = function(cveID) {
                 if (tmpCve.cveContents !== undefined && tmpCve.cveContents[i_val] !== undefined) {
                     targetObj.cveContents[i_val] = tmpCve.cveContents[i_val];
                     // Make CWE information
-                    var cveContent = getCveContent(targetObj.cveContents[i_val]);
-                    if (cveContent.cweIDs !== undefined) {
-                        $.each(cveContent.cweIDs, function(c, c_val) {
+                    // TODO CWE-nn->CWE-nn
+                    // TODO (CWE-nn|CWE-nn)
+                    var cveContents = getCveContents(targetObj.cveContents[i_val]);
+                    var cweIds = getCweIds(cveContents);
+                    if (cweIds.size > 0) {
+                        for (const c_val of cweIds) {
                             if (c_val.indexOf("NVD-CWE-") === -1) {
                                 let cweid = c_val.split("-")[1];
                                 let cweDict = x_val.data.cweDict[cweid];
@@ -1885,7 +1919,7 @@ const createDetailData = function(cveID) {
                                 targetObj.cweDict[cweid].cweTopTwentyfive2019 = cweDict.cweTopTwentyfive2019;
                                 targetObj.cweDict[cweid].sansTopTwentyfive = cweDict.sansTopTwentyfive;
                             }
-                        });
+                        }
                     }
                 }
             });
@@ -2273,11 +2307,14 @@ const displayDetail = function(cveID) {
     // ---CweID---
     let getCweIDInfo = function(cveContents, target) {
         if (cveContents[target] !== undefined) {
-            var cveContent = getCveContent(cveContents[target]);
-            if (cveContent.cweIDs) {
+            // TODO CWE-nn->CWE-nn
+            // TODO (CWE-nn|CWE-nn)
+            var cveContents = getCveContents(cveContents[target]);
+            var cweIds = getCweIds(cveContents);
+            if (cweIds.size > 0) {
                 $("#CweID").append("<div><strong>=== " + target + " ===</strong></div>");
                 $("#CweID").append("<ul id='cwe-" + target + "'>");
-                $.each(cveContent.cweIDs, function(x, x_val) {
+                for (const x_val of cweIds) {
                     let cweid = x_val.split("-")[1];
                     if (data.cweDict[cweid] !== undefined) {
                         $("#cwe-" + target).append("<li id='cweid-" + cweid + "-" + target + "'>");
@@ -2319,7 +2356,7 @@ const displayDetail = function(cveID) {
                         }
                         $("#cwe-" + target).append("</li>");
                     }
-                });
+                }
                 $("#CweID").append("</ul>");
             }
         }
@@ -2489,14 +2526,20 @@ const displayDetail = function(cveID) {
     let tags = new Set();
     var addRef = function(target) {
         if (data.cveContents[target] !== undefined) {
-            var cveContent = getCveContent(data.cveContents[target]);
-            if (isCheckNull(cveContent.references) === false) {
+            var references = new Map();
+            var cveContents = getCveContents(data.cveContents[target]);
+            for (const cveContent of cveContents) {
+                for (const reference of cveContent.references) {
+                    references.set(reference.link, reference);
+                }
+            }
+            if (isCheckNull(references) === false) {
                 let referenceListId = target + "-references";
                 $("#References").append("<details id='"+ referenceListId + "'>");
                 $("#" + referenceListId).append("<summary>" + target + " (<span></span>)</summary>");
                 let referencesId = target + "-references-list";
                 $("#" + referenceListId).append("<ul id='"+ referencesId + "'>");
-                $.each(cveContent.references, function(x, x_val) {
+                for (const [key, x_val] of references) {
                     let src = "";
                     let itemTag = [];
                     if (x_val.source !== undefined) {
@@ -2518,7 +2561,7 @@ const displayDetail = function(cveID) {
                     }
                     $("#" + referencesId).append("<li data-tags='[" + tagStrings + "]'>[" + src + "] <a href=\"" + x_val.link + "\" rel='noopener noreferrer' target='_blank'>" + x_val.link + "</a></li>");
                     countRef++;
-                });
+                };
                 $("#" + referenceListId).append("</ul>");
                 $("#References").append("</details>");
             }
