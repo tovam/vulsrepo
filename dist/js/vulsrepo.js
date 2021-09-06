@@ -905,6 +905,29 @@ const getCweIds = function(cveContents) {
     return cweIds;
 }
 
+const getCweArray = function(cveIds) {
+    var cweArray = [];
+    if (cveIds.indexOf("->") != -1) {
+        // CWE-nn->CWE-nn..
+        var ids = cveIds.split("->");
+        for (var id of ids) {
+            cweArray.push(id);
+        }
+    } else if (cveIds.indexOf("|") != -1) {
+        // (CWE-nn|CWE-nn..)
+        var ids = cveIds.replace('(', '');
+        ids = ids.replace(')', '');
+        ids = ids.split("|");
+        for (var id of ids) {
+            cweArray.push(id);
+        }
+    } else {
+        // CWE-nn
+        cweArray.push(cveIds);
+    }
+    return cweArray;
+}
+
 const createPivotData = function(resultArray) {
     let array = [];
     let cveid_count = 0;
@@ -1125,26 +1148,17 @@ const createPivotData = function(resultArray) {
                             };
 
                             var makedIds = [];
+                            var idArray = getCweArray(cweIdsArray[j]);
+                            for (const id of idArray) {
+                                makedIds.push(makeCweStrs(id));
+                            }
                             var makedIdStr = "";
                             if (cweIdsArray[j].indexOf("->") != -1) {
-                                // CWE-nn->CWE-nn..
-                                var ids = cweIdsArray[j].split("->");
-                                for (var id of ids) {
-                                    makedIds.push(makeCweStrs(id));
-                                }
                                 makedIdStr = makedIds.join('->');
                             } else if (cweIdsArray[j].indexOf("|") != -1) {
-                                // (CWE-nn|CWE-nn..)
-                                var ids = cweIdsArray[j].replace('(', '');
-                                ids = ids.replace(')', '');
-                                ids = ids.split("|");
-                                for (var id of ids) {
-                                    makedIds.push(makeCweStrs(id));
-                                }
                                 makedIdStr = "(" + makedIds.join('|') + ")";
                             } else {
-                                // CWE-nn
-                                makedIdStr = makeCweStrs(cweIdsArray[j])
+                                makedIdStr = makedIds[0];
                             }
                             cweIdStr = cweIdStr + makedIdStr;
 
@@ -1823,26 +1837,17 @@ const addCweIDLink = function() {
                 };
 
                 var makedIds = [];
+                var idArray = getCweArray(cveids[i]);
+                for (const id of idArray) {
+                    makedIds.push(makeLink(id));
+                }
                 var makedIdStr = "";
                 if (cveids[i].indexOf("->") != -1) {
-                    // CWE-nn->CWE-nn..
-                    var ids = cveids[i].split("->");
-                    for (var id of ids) {
-                        makedIds.push(makeLink(id));
-                    }
                     makedIdStr = makedIds.join('->');
                 } else if (cveids[i].indexOf("|") != -1) {
-                    // (CWE-nn|CWE-nn..)
-                    var ids = cveids[i].replace('(', '');
-                    ids = ids.replace(')', '');
-                    ids = ids.split("|");
-                    for (var id of ids) {
-                        makedIds.push(makeLink(id));
-                    }
                     makedIdStr = "(" + makedIds.join('|') + ")";
                 } else {
-                    // CWE-nn
-                    makedIdStr = makeLink(cveids[i])
+                    makedIdStr = makedIds[0];
                 }
 
                 generated = generated + makedIdStr;
@@ -1959,20 +1964,30 @@ const createDetailData = function(cveID) {
                     if (cweIds.size > 0) {
                         for (const c_val of cweIds) {
                             if (c_val.indexOf("NVD-CWE-") === -1) {
-                                let cweid = c_val.split("-")[1];
-                                let cweDict = x_val.data.cweDict[cweid];
-                                if (targetObj.cweDict[cweid] === undefined) {
-                                    targetObj.cweDict[cweid] = {};
+                                var cweArray = getCweArray(c_val);
+                                for (const cwe of cweArray) {
+                                    var cweid = cwe.split("-")[1];
+                                    var cweDict = x_val.data.cweDict[cweid];
+                                    if (cweDict === undefined) {
+                                        targetObj.cweDict[cweid] = {};
+                                        targetObj.cweDict[cweid].owaspTopTen2017 = "";
+                                        targetObj.cweDict[cweid].cweTopTwentyfive2019 = "";
+                                        targetObj.cweDict[cweid].sansTopTwentyfive = "";
+                                    } else {
+                                        if (targetObj.cweDict[cweid] === undefined) {
+                                            targetObj.cweDict[cweid] = {};
+                                        }
+                                        if (targetObj.cweDict[cweid].en === undefined && cweDict.en !== undefined) {
+                                            targetObj.cweDict[cweid].en = cweDict.en;
+                                        }
+                                        if (targetObj.cweDict[cweid].ja === undefined && cweDict.ja !== undefined) {
+                                            targetObj.cweDict[cweid].ja = cweDict.ja;
+                                        }
+                                        targetObj.cweDict[cweid].owaspTopTen2017 = cweDict.owaspTopTen2017;
+                                        targetObj.cweDict[cweid].cweTopTwentyfive2019 = cweDict.cweTopTwentyfive2019;
+                                        targetObj.cweDict[cweid].sansTopTwentyfive = cweDict.sansTopTwentyfive;
+                                    }
                                 }
-                                if (targetObj.cweDict[cweid].en === undefined && cweDict.en !== undefined) {
-                                    targetObj.cweDict[cweid].en = cweDict.en;
-                                }
-                                if (targetObj.cweDict[cweid].ja === undefined && cweDict.ja !== undefined) {
-                                    targetObj.cweDict[cweid].ja = cweDict.ja;
-                                }
-                                targetObj.cweDict[cweid].owaspTopTen2017 = cweDict.owaspTopTen2017;
-                                targetObj.cweDict[cweid].cweTopTwentyfive2019 = cweDict.cweTopTwentyfive2019;
-                                targetObj.cweDict[cweid].sansTopTwentyfive = cweDict.sansTopTwentyfive;
                             }
                         }
                     }
@@ -2370,47 +2385,76 @@ const displayDetail = function(cveID) {
                 $("#CweID").append("<div><strong>=== " + target + " ===</strong></div>");
                 $("#CweID").append("<ul id='cwe-" + target + "'>");
                 for (const x_val of cweIds) {
-                    let cweid = x_val.split("-")[1];
-                    if (data.cweDict[cweid] !== undefined) {
-                        $("#cwe-" + target).append("<li id='cweid-" + cweid + "-" + target + "'>");
-                        let name = "";
-                        if (isNVDHighPriority()) {
-                            if (data.cweDict[cweid].en !== undefined) {
-                                name = data.cweDict[cweid].en.name;
-                            } else if (name === "" && data.cweDict[cweid].ja !== undefined) {
-                                name = data.cweDict[cweid].ja.name;
-                            }
-                        } else {
-                            if (data.cweDict[cweid].ja !== undefined) {
-                                name = data.cweDict[cweid].ja.name;
-                            } else  if (name === "" && data.cweDict[cweid].en !== undefined) {
-                                name = data.cweDict[cweid].en.name;
-                            }
+                    var makeCweContents = function(idstr) {
+                        if (idstr.indexOf("NVD-CWE-") != -1) {
+                            return idstr;
                         }
-                        $("#cweid-" + cweid + "-" + target).append(cweid + " [" + name + "]");
-                        $("#cweid-" + cweid + "-" + target).append(" (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>");
-                        $("#cweid-" + cweid + "-" + target).append("<span>&nbsp;/&nbsp;</span>");
-                        $("#cweid-" + cweid + "-" + target).append("<a href=\"" + detailLink.cwe_jvn.url + x_val + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)");
-                        if (data.cweDict[cweid].cweTopTwentyfive2019 !== undefined && data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
-                            // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
-                            $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>");
-                        }
-                        if (data.cweDict[cweid].owaspTopTen2017 !== undefined && data.cweDict[cweid].owaspTopTen2017 !== "") {
-                            // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
-                            let owaspLink = "";
+                        var cweid = idstr.split("-")[1];
+                        var oneContents = cweid;
+                        if (data.cweDict[cweid] !== undefined) {
+                            var name = "";
                             if (isNVDHighPriority()) {
-                                owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].en;
+                                if (data.cweDict[cweid].en !== undefined) {
+                                    name = data.cweDict[cweid].en.name;
+                                } else if (name === "" && data.cweDict[cweid].ja !== undefined) {
+                                    name = data.cweDict[cweid].ja.name;
+                                }
                             } else {
-                                owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].ja;
+                                if (data.cweDict[cweid].ja !== undefined) {
+                                    name = data.cweDict[cweid].ja.name;
+                                } else  if (name === "" && data.cweDict[cweid].en !== undefined) {
+                                    name = data.cweDict[cweid].en.name;
+                                }
                             }
-                            $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + owaspLink + "\" rel='noopener noreferrer' target='_blank' class='badge count'>OWASP Rank: " + data.cweDict[cweid].owaspTopTen2017 +"</a>");
+                            oneContents = oneContents + " [" + name + "]";
+                            oneContents = oneContents + " (<a href=\"" + detailLink.cwe_nvd.url + cweid + "\" rel='noopener noreferrer' target='_blank'>MITRE</a>";
+                            oneContents = oneContents + "<span>&nbsp;/&nbsp;</span>";
+                            oneContents = oneContents + "<a href=\"" + detailLink.cwe_jvn.url + "CWE-" + cweid + ".html\" rel='noopener noreferrer' target='_blank'>JVN</a>)";
+                            if (data.cweDict[cweid].cweTopTwentyfive2019 !== undefined && data.cweDict[cweid].cweTopTwentyfive2019 !== "") {
+                                // CWE Top25 https://cwe.mitre.org/top25/archive/2019/2019_cwe_top25.html
+                                oneContents = oneContents + " <a href=\"" + detailLink.cweTopTwentyfive2019.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>CWE Rank: " + data.cweDict[cweid].cweTopTwentyfive2019 +"</a>";
+                            }
+                            if (data.cweDict[cweid].owaspTopTen2017 !== undefined && data.cweDict[cweid].owaspTopTen2017 !== "") {
+                                // OWASP Top Ten 2017 https://owasp.org/www-project-top-ten/OWASP_Top_Ten_2017/Top_10-2017_Top_10.html
+                                let owaspLink = "";
+                                if (isNVDHighPriority()) {
+                                    owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].en;
+                                } else {
+                                    owaspLink = detailLink.owaspTopTen2017[data.cweDict[cweid].owaspTopTen2017].ja;
+                                }
+                                oneContents = oneContents + " <a href=\"" + owaspLink + "\" rel='noopener noreferrer' target='_blank' class='badge count'>OWASP Rank: " + data.cweDict[cweid].owaspTopTen2017 +"</a>";
+                            }
+                            if (data.cweDict[cweid].sansTopTwentyfive !== undefined && data.cweDict[cweid].sansTopTwentyfive !== "") {
+                                // SANS Top25 https://www.sans.org/top25-software-errors/
+                                oneContents = oneContents + " <a href=\"" + detailLink.sansTopTwentyfive.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>SANS Rank: " + data.cweDict[cweid].sansTopTwentyfive + "</a>";
+                            }
                         }
-                        if (data.cweDict[cweid].sansTopTwentyfive !== undefined && data.cweDict[cweid].sansTopTwentyfive !== "") {
-                            // SANS Top25 https://www.sans.org/top25-software-errors/
-                            $("#cweid-" + cweid + "-" + target).append(" <a href=\"" + detailLink.sansTopTwentyfive.url + "\" rel='noopener noreferrer' target='_blank' class='badge count'>SANS Rank: " + data.cweDict[cweid].sansTopTwentyfive + "</a>");
-                        }
-                        $("#cwe-" + target).append("</li>");
+
+                        return oneContents;
+                    };
+
+                    var cweArray = getCweArray(x_val);
+                    var makedIds = [];
+                    for (const id of cweArray) {
+                        makedIds.push(makeCweContents(id));
                     }
+
+                    var liId = x_val.replace(">", "-");
+                    liId = liId.replace("(", "-");
+                    liId = liId.replace("|", "-");
+                    liId = liId.replace(")", "-");
+                    $("#cwe-" + target).append("<li id='cweid-" + liId + "-" + target + "'>");
+
+                    var item = "";
+                    if (x_val.indexOf("->") != -1) {
+                        item = makedIds.join(' leads to ');
+                    } else if (x_val.indexOf("|") != -1) {
+                        item = makedIds.join(' or ');
+                    } else {
+                        item = makedIds[0];
+                    }
+                    $("#cweid-" + liId + "-" + target).append(item);
+                    $("#cwe-" + target).append("</li>");
                 }
                 $("#CweID").append("</ul>");
             }
