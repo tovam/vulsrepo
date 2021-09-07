@@ -2001,12 +2001,10 @@ const createDetailData = function(cveID) {
 
 const initDetail = function() {
     $("#modal-label").text("");
-    $("#count-patch").text("0");
     $("#count-cert").text("0");
     $("#count-References").text("0");
     $("#CweID,#Mitigation,#Link,#primary-src,#patch,#cert,#exploit,#reference-tags,#References").empty();
     $("#Mitigation-section").hide();
-    $("#patch-section").hide();
     $("#cert-section").hide();
     $("#exploit-section").hide();
 
@@ -2580,6 +2578,27 @@ const displayDetail = function(cveID) {
     $("#primary-src").append("</ul>");
 
     // ---Patch---
+    var patches = new Set();
+    if (data.cveContents["nvd"] !== undefined) {
+        var cveContents = getCveContents(data.cveContents["nvd"]);
+        for (const cveContent of cveContents) {
+            for (const reference of cveContent.references) {
+                if (reference.tags !== undefined && reference.tags.includes("Patch")) {
+                    patches.add(reference.link);
+                }
+            }
+        }
+    }
+
+    if (patches.size > 0) {
+        $("#patch").append("<ul id='patch-list'>");
+        for (const link of patches) {
+            $("#patch-list").append("<li><a href=\"" + link + "\" rel='noopener noreferrer' target='_blank'>" + link + "</a></li>");
+        }
+        $("#patch").append("</ul>");
+    } else {
+        $("#patch").append("None");
+    }
 
     // ---USCERT/JPCERT---
     let countCert = 0;
