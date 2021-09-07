@@ -2001,10 +2001,12 @@ const createDetailData = function(cveID) {
 
 const initDetail = function() {
     $("#modal-label").text("");
+    $("#count-patch").text("0");
     $("#count-cert").text("0");
     $("#count-References").text("0");
-    $("#CweID,#Mitigation,#Link,#cert,#exploit,#reference-tags,#References").empty();
+    $("#CweID,#Mitigation,#Link,#primary-src,#patch,#cert,#exploit,#reference-tags,#References").empty();
     $("#Mitigation-section").hide();
+    $("#patch-section").hide();
     $("#cert-section").hide();
     $("#exploit-section").hide();
 
@@ -2538,6 +2540,46 @@ const displayDetail = function(cveID) {
     } else {
         $("#typeName_github").append("GitHub");
     }
+
+    // ---Primary source---
+    var families = [];
+    for (const d of vulsrepo.detailRawData) {
+        families.push(d.data.family);
+    }
+
+    var primarySrcs = new Set();
+    var addPrimarySrc = function(target) {
+        if (data.cveContents[target] !== undefined) {
+            var cveContents = getCveContents(data.cveContents[target]);
+            for (const cveContent of cveContents) {
+                for (const reference of cveContent.references) {
+                    if (target === "nvd" && reference.tags !== undefined && reference.tags.includes("Vendor Advisory")) {
+                        primarySrcs.add(reference.link);
+                    }
+                }
+                if (target === "nvd" || target === "jvn" || families.includes(target) || target === "github") {
+                    if (cveContent.sourceLink !== "") {
+                        primarySrcs.add(cveContent.sourceLink);
+                    }
+                }
+            }
+        }
+    }
+
+    $.each(priority, function(i, i_val) {
+        addPrimarySrc(i_val);
+    });
+    if (isCheckNull(primarySrcs.size) === false) {
+        primarySrcs.add("https://nvd.nist.gov/vuln/detail/" + data.cveID);
+    }
+
+    $("#primary-src").append("<ul id='primary-src-list'>");
+    for (const link of primarySrcs) {
+        $("#primary-src-list").append("<li><a href=\"" + link + "\" rel='noopener noreferrer' target='_blank'>" + link + "</a></li>");
+    }
+    $("#primary-src").append("</ul>");
+
+    // ---Patch---
 
     // ---USCERT/JPCERT---
     let countCert = 0;
