@@ -2550,9 +2550,11 @@ const displayDetail = function(cveID) {
         if (data.cveContents[target] !== undefined) {
             var cveContents = getCveContents(data.cveContents[target]);
             for (const cveContent of cveContents) {
-                for (const reference of cveContent.references) {
-                    if (target === "nvd" && reference.tags !== undefined && reference.tags.includes("Vendor Advisory")) {
-                        primarySrcs.add(reference.link);
+                if (cveContent.references !== undefined) {
+                    for (const reference of cveContent.references) {
+                        if (target === "nvd" && reference.tags !== undefined && reference.tags.includes("Vendor Advisory")) {
+                            primarySrcs.add(reference.link);
+                        }
                     }
                 }
                 if (target === "nvd" || target === "jvn" || families.includes(target) || target === "github") {
@@ -2582,9 +2584,11 @@ const displayDetail = function(cveID) {
     if (data.cveContents["nvd"] !== undefined) {
         var cveContents = getCveContents(data.cveContents["nvd"]);
         for (const cveContent of cveContents) {
-            for (const reference of cveContent.references) {
-                if (reference.tags !== undefined && reference.tags.includes("Patch")) {
-                    patches.add(reference.link);
+            if (cveContent.references !== undefined) {
+                for (const reference of cveContent.references) {
+                    if (reference.tags !== undefined && reference.tags.includes("Patch")) {
+                        patches.add(reference.link);
+                    }
                 }
             }
         }
@@ -2689,8 +2693,10 @@ const displayDetail = function(cveID) {
             var references = new Map();
             var cveContents = getCveContents(data.cveContents[target]);
             for (const cveContent of cveContents) {
-                for (const reference of cveContent.references) {
-                    references.set(reference.link, reference);
+                if (cveContent.references !== undefined) {
+                    for (const reference of cveContent.references) {
+                        references.set(reference.link, reference);
+                    }
                 }
             }
             if (isCheckNull(references) === false) {
