@@ -2006,7 +2006,7 @@ const initDetail = function() {
     $("#modal-label").text("");
     $("#count-cert").text("0");
     $("#count-References").text("0");
-    $("#CweID,#Mitigation,#Link,#cert,#exploit,#reference-tags,#References").empty();
+    $("#CweID,#Mitigation,#Link,#primary-src,#patch,#cert,#exploit,#reference-tags,#References").empty();
     $("#Mitigation-section").hide();
     $("#cert-section").hide();
     $("#exploit-section").hide();
@@ -2542,6 +2542,71 @@ const displayDetail = function(cveID) {
         $("#typeName_github").append("GitHub");
     }
 
+    // ---Primary source---
+    var families = [];
+    for (const d of vulsrepo.detailRawData) {
+        families.push(d.data.family);
+    }
+
+    var primarySrcs = new Set();
+    var addPrimarySrc = function(target) {
+        if (data.cveContents[target] !== undefined) {
+            var cveContents = getCveContents(data.cveContents[target]);
+            for (const cveContent of cveContents) {
+                if (cveContent.references !== undefined) {
+                    for (const reference of cveContent.references) {
+                        if (target === "nvd" && reference.tags !== undefined && reference.tags.includes("Vendor Advisory")) {
+                            primarySrcs.add(reference.link);
+                        }
+                    }
+                }
+                if (target === "nvd" || target === "jvn" || families.includes(target) || target === "github") {
+                    if (cveContent.sourceLink !== "") {
+                        primarySrcs.add(cveContent.sourceLink);
+                    }
+                }
+            }
+        }
+    }
+
+    $.each(priority, function(i, i_val) {
+        addPrimarySrc(i_val);
+    });
+    if (isCheckNull(primarySrcs.size) === false) {
+        primarySrcs.add("https://nvd.nist.gov/vuln/detail/" + data.cveID);
+    }
+
+    $("#primary-src").append("<ul id='primary-src-list'>");
+    for (const link of primarySrcs) {
+        $("#primary-src-list").append("<li><a href=\"" + link + "\" rel='noopener noreferrer' target='_blank'>" + link + "</a></li>");
+    }
+    $("#primary-src").append("</ul>");
+
+    // ---Patch---
+    var patches = new Set();
+    if (data.cveContents["nvd"] !== undefined) {
+        var cveContents = getCveContents(data.cveContents["nvd"]);
+        for (const cveContent of cveContents) {
+            if (cveContent.references !== undefined) {
+                for (const reference of cveContent.references) {
+                    if (reference.tags !== undefined && reference.tags.includes("Patch")) {
+                        patches.add(reference.link);
+                    }
+                }
+            }
+        }
+    }
+
+    if (patches.size > 0) {
+        $("#patch").append("<ul id='patch-list'>");
+        for (const link of patches) {
+            $("#patch-list").append("<li><a href=\"" + link + "\" rel='noopener noreferrer' target='_blank'>" + link + "</a></li>");
+        }
+        $("#patch").append("</ul>");
+    } else {
+        $("#patch").append("None");
+    }
+
     // ---USCERT/JPCERT---
     let countCert = 0;
 
@@ -2631,8 +2696,10 @@ const displayDetail = function(cveID) {
             var references = new Map();
             var cveContents = getCveContents(data.cveContents[target]);
             for (const cveContent of cveContents) {
-                for (const reference of cveContent.references) {
-                    references.set(reference.link, reference);
+                if (cveContent.references !== undefined) {
+                    for (const reference of cveContent.references) {
+                        references.set(reference.link, reference);
+                    }
                 }
             }
             if (isCheckNull(references) === false) {
@@ -2644,16 +2711,23 @@ const displayDetail = function(cveID) {
                 for (const [key, x_val] of references) {
                     let src = "";
                     let itemTag = [];
+                    // source
                     if (x_val.source !== undefined) {
                         src = x_val.source;
                         src = src.replace(" ", "");
                         tags.add(src);
                         itemTag.push(src);
-                    } else if (isCheckNull(x_val.tags) === false) {
-                        src = x_val.tags.join(", ");
+                    }
+                    // tags
+                    if (isCheckNull(x_val.tags) === false) {
+                        if (src !== "") {
+                            src = src + ", ";
+                        }
+                        src = src + x_val.tags.join(", ");
                         x_val.tags.forEach(item => tags.add(item));
                         itemTag.push(...x_val.tags.map(tag => tag.replace(" ", "")));
-                    } else {
+                    }
+                    if (itemTag.length == 0) {
                         tags.add(src);
                         itemTag.push(src);
                     }
