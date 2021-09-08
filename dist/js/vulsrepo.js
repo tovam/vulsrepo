@@ -2702,16 +2702,23 @@ const displayDetail = function(cveID) {
                 for (const [key, x_val] of references) {
                     let src = "";
                     let itemTag = [];
+                    // source
                     if (x_val.source !== undefined) {
                         src = x_val.source;
                         src = src.replace(" ", "");
                         tags.add(src);
                         itemTag.push(src);
-                    } else if (isCheckNull(x_val.tags) === false) {
-                        src = x_val.tags.join(", ");
+                    }
+                    // tags
+                    if (isCheckNull(x_val.tags) === false) {
+                        if (src !== "") {
+                            src = src + ", ";
+                        }
+                        src = src + x_val.tags.join(", ");
                         x_val.tags.forEach(item => tags.add(item));
                         itemTag.push(...x_val.tags.map(tag => tag.replace(" ", "")));
-                    } else {
+                    }
+                    if (itemTag.length == 0) {
                         tags.add(src);
                         itemTag.push(src);
                     }
