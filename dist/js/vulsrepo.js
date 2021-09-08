@@ -1398,8 +1398,11 @@ const createPivotData = function(resultArray) {
                     } else {
                         // 0.13.x or earlier
                         var getMitigation = function(target) {
+                            if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined) {
+                                return false;
+                            }
                             var cveContent = getCveContent(y_val.cveContents[target]);
-                            if (y_val.cveContents === undefined || y_val.cveContents[target] === undefined || cveContent.mitigation === undefined || cveContent.mitigation === "") {
+                            if (cveContent.mitigation === undefined || cveContent.mitigation === "") {
                                 return false;
                             }
 
