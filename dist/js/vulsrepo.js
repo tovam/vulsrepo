@@ -1960,8 +1960,6 @@ const createDetailData = function(cveID) {
                 if (tmpCve.cveContents !== undefined && tmpCve.cveContents[i_val] !== undefined) {
                     targetObj.cveContents[i_val] = tmpCve.cveContents[i_val];
                     // Make CWE information
-                    // TODO CWE-nn->CWE-nn
-                    // TODO (CWE-nn|CWE-nn)
                     var cveContents = getCveContents(targetObj.cveContents[i_val]);
                     var cweIds = getCweIds(cveContents);
                     if (cweIds.size > 0) {
@@ -2380,8 +2378,6 @@ const displayDetail = function(cveID) {
     // ---CweID---
     let getCweIDInfo = function(cveContents, target) {
         if (cveContents[target] !== undefined) {
-            // TODO CWE-nn->CWE-nn
-            // TODO (CWE-nn|CWE-nn)
             var cveContents = getCveContents(cveContents[target]);
             var cweIds = getCweIds(cveContents);
             if (cweIds.size > 0) {
