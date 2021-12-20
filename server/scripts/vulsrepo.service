@@ -4,7 +4,7 @@ Documentation=https://vuls.io/docs/en/vulsrepo.html
 
 [Service]
 ExecStart = /home/vuls-user/vulsrepo/server/vulsrepo-server
-ExecRestart = /bin/kill -WINCH ${MAINPID} ; /home/vuls-user/vulsrepo/server/vulsrepo-server
+ExecReload = /bin/kill -WINCH ${MAINPID} ; /home/vuls-user/vulsrepo/server/vulsrepo-server
 ExecStop = /bin/kill -WINCH ${MAINPID}
 Restart = no
 Type = simple
