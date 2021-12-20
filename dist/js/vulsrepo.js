@@ -1187,14 +1187,32 @@ const createPivotData = function(resultArray) {
                     result["Container"] = getContainerName(x_val.data);
 
                     var cert = "";
+                    if (y_val.alertDict.cisa != null) {
+                        cert = y_val.alertDict.cisa[0].url;
+                    }
                     if (y_val.alertDict.en != null) {
+                        if (cert !== "") {
+                            cert = cert + ",";
+                        }
                         cert = y_val.alertDict.en[0].url;
+                    }
+                    if (y_val.alertDict.uscert != null) {
+                        if (cert !== "") {
+                            cert = cert + ",";
+                        }
+                        cert = y_val.alertDict.uscert[0].url;
                     }
                     if (y_val.alertDict.ja != null) {
                         if (cert !== "") {
                             cert = cert + ",";
                         }
                         cert = cert + y_val.alertDict.ja[0].url;
+                    }
+                    if (y_val.alertDict.jpcert != null) {
+                        if (cert !== "") {
+                            cert = cert + ",";
+                        }
+                        cert = cert + y_val.alertDict.jpcert[0].url;
                     }
                     if (cert !== "") {
                         cert = "CHK-CERT-" + cert;
@@ -1906,6 +1924,9 @@ const addCertLink = function() {
             let team = "USCERT";
             if (certs[i].indexOf("jpcert") != -1) {
                 team = "JPCERT";
+            }
+            if (certs[i].indexOf("cisa") != -1) {
+                team = "CISA";
             }
             generated = generated +"<a href=\"" + certs[i] + "\" rel='noopener noreferrer' target='_blank'>" + team + "</a>";
             if (i < certs.length - 1) {
@@ -2627,9 +2648,15 @@ const displayDetail = function(cveID) {
     if (isNVDHighPriority()) {
         addCert("en", "USCERT");
         addCert("ja", "JPCERT");
+        addCert("cisa", "CISA");
+        addCert("uscert", "USCERT");
+        addCert("jpcert", "JPCERT");
     } else {
         addCert("ja", "JPCERT");
         addCert("en", "USCERT");
+        addCert("cisa", "CISA");
+        addCert("jpcert", "JPCERT");
+        addCert("uscert", "USCERT");
     }
     if (countCert > 0) {
         $("#count-cert").text(countCert);
